@@ -1,93 +1,59 @@
-# SaaS MVP Template
+# SaaS MVP Template 🚀
 
-A complete, production-ready SaaS starter template built with Next.js 15, Supabase, and modern web technologies. This template includes everything you need to launch your SaaS product quickly.
+A complete, production-ready SaaS starter template built with **Next.js 16**, **Supabase**, and modern web technologies.  
+Perfect for hackathons, MVPs, and rapid product experiments.
 
-## Features
+👉 **New here? Start with the [Setup Guide](./SETUP_GUIDE.md)**  
+💬 **Questions? Join the conversation in [Discussions](../../discussions)**
 
-- **Authentication & Authorization**: Complete auth system with Supabase (email/password, magic links, OAuth)
-- **Database**: PostgreSQL with Supabase, including Row Level Security (RLS)
-- **Payment Processing**: Integrated Stripe and Razorpay support with webhook handlers (optional)
-- **Email Notifications**: Transactional emails with Resend and React Email
-- **Dashboard**: Full-featured admin dashboard with sidebar navigation
-- **Landing Page**: Modern, responsive marketing site with pricing and FAQ
-- **Dark Mode**: Built-in theme switching with next-themes
-- **Analytics**: Vercel Analytics integration
-- **Type Safety**: Full TypeScript support with database types
-- **UI Components**: shadcn/ui component library
-- **Charts & Visualizations**: Recharts integration for data visualization
+---
 
-## Tech Stack
+## ✨ Features
 
-- **Framework**: Next.js 15 (App Router)
+- **Authentication & Authorization**  
+  Email/password, magic links, and OAuth via Supabase Auth
+- **Database**  
+  PostgreSQL with Supabase + Row Level Security (RLS)
+- **Email Notifications**  
+  Transactional emails with Resend + React Email
+- **Dashboard**  
+  Protected admin dashboard with sidebar navigation
+- **Landing Page**  
+  Responsive marketing site with pricing & FAQ sections
+- **Dark Mode**  
+  Theme switching via `next-themes`
+- **Type Safety**  
+  End-to-end TypeScript (including database types)
+- **UI Components**  
+  shadcn/ui + Radix UI
+- **Charts & Visualizations**  
+  Recharts integration
+
+---
+
+## 🧰 Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
 - **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Payments**: Stripe / Razorpay
+- **Auth**: Supabase Auth
 - **Email**: Resend + React Email
 - **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui + Radix UI
-- **Charts**: Recharts
+- **UI**: shadcn/ui + Radix UI
 - **Forms**: React Hook Form + Zod
-- **Type Safety**: TypeScript
-- **Analytics**: Vercel Analytics
+- **Charts**: Recharts
+- **Language**: TypeScript
+- **Runtime**: Bun
 
-## Getting Started
+---
 
-### Prerequisites
+## 🚀 Getting Started (Quick Start)
 
-- Bun
-- A Supabase account
-- A Stripe or Razorpay account (optional - for payments)
-- A Resend account (for emails)
+> For full instructions, see the **[Setup Guide](./SETUP_GUIDE.md)**
 
-### Installation
-
-1. Clone the repository or download the code
-
-2. Install dependencies:
-\`\`\`bash
+```bash
 bun install
-\`\`\`
-
-3. Set up environment variables:
-
-Copy `.env.example` to `.env.local` and fill in your credentials:
-
-\`\`\`bash
-cp .env.example .env.local
-\`\`\`
-
-**Required environment variables:**
-- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (get from Supabase dashboard)
-- `RESEND_API_KEY`: Your Resend API key
-- `FROM_EMAIL`: Email address to send from (e.g., noreply@yourdomain.com)
-- `NEXT_PUBLIC_APP_URL`: Your app URL (http://localhost:3000 for development)
-
-**Optional environment variables (for payments):**
-- `PAYMENT_PROVIDER`: Either "stripe" or "razorpay" (default: "stripe")
-- `STRIPE_SECRET_KEY`: Your Stripe secret key
-- `STRIPE_WEBHOOK_SECRET`: Your Stripe webhook secret
-- `STRIPE_STARTER_PRICE_ID`: Stripe price ID for starter plan
-- `STRIPE_PRO_PRICE_ID`: Stripe price ID for pro plan
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`: Your Stripe publishable key
-- `RAZORPAY_KEY_ID`: Your Razorpay key ID
-- `RAZORPAY_KEY_SECRET`: Your Razorpay key secret
-- `RAZORPAY_WEBHOOK_SECRET`: Your Razorpay webhook secret
-- `RAZORPAY_STARTER_PLAN_ID`: Razorpay plan ID for starter plan
-- `RAZORPAY_PRO_PLAN_ID`: Razorpay plan ID for pro plan
-
-**Note**: The app works without payment credentials. Payment features will show a friendly error message until you add the keys.
-
-4. Run the database migrations:
-
-Execute the SQL scripts in the `scripts` folder in your Supabase SQL editor or use the v0 script runner.
-
-5. Start the development server:
-
-\`\`\`bash
 bun run dev
-\`\`\`
+```
 
 Open [http://localhost:3000](http://localhost:3000) to see your app.
 
@@ -108,11 +74,8 @@ Open [http://localhost:3000](http://localhost:3000) to see your app.
 │   │   ├── dashboard/           # Dashboard-specific components
 │   │   ├── landing/             # Landing page components
 │   │   └── ui/                  # Reusable UI components (shadcn)
-│   ├── emails/                  # Email templates (React Email)
 │   ├── hooks/
 │   ├── lib/
-│   │   ├── email/               # Email utilities
-│   │   ├── payments/            # Payment provider integrations
 │   │   └── supabase/            # Supabase client utilities
 │   └── types/                   # TypeScript type definitions
 ├── public/                      # Static assets
@@ -134,60 +97,8 @@ Open [http://localhost:3000](http://localhost:3000) to see your app.
 The template includes the following tables:
 
 - **profiles**: User profile information
-- **todos**: Example CRUD functionality
-- **subscriptions**: User subscription data
-- **payments**: Payment transaction history
 
 All tables include Row Level Security (RLS) policies for data protection.
-
-## Payment Integration
-
-**Payment integration is optional.** The app works fully without payment credentials. When users try to checkout without configured payment providers, they'll see a friendly error message.
-
-### Stripe Setup
-
-1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Get your API keys from the Stripe dashboard
-3. Create products and prices in Stripe
-4. Add the price IDs to your environment variables
-5. Set `PAYMENT_PROVIDER=stripe` in your environment variables
-6. Set up webhook endpoint: `https://yourdomain.com/api/webhook/stripe`
-7. Add the webhook secret to your environment variables
-
-### Razorpay Setup
-
-1. Create a Razorpay account at [razorpay.com](https://razorpay.com)
-2. Get your API keys from the Razorpay dashboard
-3. Create subscription plans in Razorpay
-4. Add the plan IDs to your environment variables
-5. Set `PAYMENT_PROVIDER=razorpay` in your environment variables
-6. Set up webhook endpoint: `https://yourdomain.com/api/webhook/razorpay`
-7. Add the webhook secret to your environment variables
-
-## Email Setup
-
-1. Create a Resend account at [resend.com](https://resend.com)
-2. Verify your domain or use the test domain
-3. Get your API key from the Resend dashboard
-4. Add the API key to your environment variables
-5. Customize email templates in the `emails/` folder
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-2. Import your repository in Vercel
-3. Add all environment variables in the Vercel dashboard
-4. Deploy!
-
-### Post-Deployment
-
-1. Update webhook URLs in Stripe/Razorpay dashboard
-2. Update `NEXT_PUBLIC_APP_URL` environment variable
-3. Test authentication flow
-4. Test payment flow
-5. Test email delivery
 
 ## Customization
 

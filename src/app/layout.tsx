@@ -4,7 +4,6 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
-import { PostHogProvider } from "@/components/PostHogProvider";
 import "@/app/globals.css";
 
 const inter = Inter({
@@ -38,7 +37,6 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="font-sans antialiased">
-        <PostHogProvider>
           <Suspense fallback={<div>Loading...</div>}>
             <ThemeProvider
               attribute="class"
@@ -50,7 +48,6 @@ export default function RootLayout({
             </ThemeProvider>
           </Suspense>
           <Analytics />
-        </PostHogProvider>
       </body>
     </html>
   );

@@ -2,7 +2,6 @@
 
 import { getSupabaseServerClient } from "@/lib/supabase/forAuth";
 import { redirect } from "next/navigation";
-import { sendWelcomeEmail } from "@/lib/email/send";
 
 export async function signUp(formData: FormData) {
   const email = formData.get("email") as string;
@@ -26,10 +25,6 @@ export async function signUp(formData: FormData) {
 
   if (error) {
     return { error: error.message };
-  }
-
-  if (data.user) {
-    await sendWelcomeEmail(email, fullName || "User");
   }
 
   redirect("/dashboard");

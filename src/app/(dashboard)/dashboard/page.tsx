@@ -56,17 +56,6 @@ export default async function DashboardPage() {
     } else {
       profile = profileData
     }
-
-    const { count, error: todosError } = await supabase
-      .from("todos")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-
-    if (todosError && todosError.code === "PGRST205") {
-      databaseError = true
-    } else {
-      todosCount = count || 0
-    }
   } catch (error) {
     console.error("[v0] Database error:", error)
     databaseError = true
