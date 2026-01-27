@@ -54,6 +54,7 @@ NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/dashboard
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
 ## Step 3: Install Dependencies
 
