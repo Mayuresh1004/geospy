@@ -97,11 +97,11 @@ When this executes without any issues:
 
 Post-Deployment Checklist
 
-- [] Update Supabase redirect URLs
+- [ ] Update Supabase redirect URLs
 
-- [] Test signup + login
+- [ ] Test signup + login
 
-- [] Verify dashboard access
+- [ ] Verify dashboard access
 
 ## Help and Support
 - Ask questions in [Discussions](../../discussions)
