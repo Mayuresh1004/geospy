@@ -116,10 +116,51 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gray-50 text-gray-900;
   }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Prose styling for AI answers */
+.prose {
+  @apply text-gray-700;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  @apply font-semibold text-gray-900 mt-6 mb-3;
+}
+
+.prose ul,
+.prose ol {
+  @apply my-4 pl-6;
+}
+
+.prose li {
+  @apply my-2;
+}
+
+.prose p {
+  @apply my-3;
+}
+
+.prose code {
+  @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm;
 }

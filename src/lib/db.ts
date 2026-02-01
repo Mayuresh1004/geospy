@@ -1,12 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// Server-side client with service role
-export const db = createClient(supabaseUrl, supabaseServiceKey);
+// Service role client (bypasses RLS)
+export const db = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
-// Types
+// Types remain the same...
 export type Project = {
   id: string;
   user_id: string;
