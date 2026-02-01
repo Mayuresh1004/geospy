@@ -3,10 +3,10 @@
 
 import { useState, useMemo } from "react";
 import { formatDistanceToNow } from "date-fns";
-import { 
-  MessageSquare, 
-  Calendar, 
-  ChevronDown, 
+import {
+  MessageSquare,
+  Calendar,
+  ChevronDown,
   ChevronUp,
   Tag,
   Hash
@@ -97,7 +97,7 @@ export default function AIAnswerCard({ answer }: AIAnswerCardProps) {
 
   const isList = parsed.type === "list";
   const displayContent = isList ? (
-    <ol className="list-decimal list-outside pl-6 space-y-2 text-gray-700">
+    <ol className="list-decimal list-outside pl-6 space-y-2 text-foreground">
       {parsed.items.map((item, i) => (
         <li key={i} className="pl-1">
           {renderWithBold(item)}
@@ -105,22 +105,22 @@ export default function AIAnswerCard({ answer }: AIAnswerCardProps) {
       ))}
     </ol>
   ) : (
-    <div className="text-gray-700 whitespace-pre-wrap">{renderWithBold(answer.raw_answer)}</div>
+    <div className="text-foreground whitespace-pre-wrap">{renderWithBold(answer.raw_answer)}</div>
   );
 
   const clampClass = !expanded && answer.raw_answer.length > 300 ? "line-clamp-3" : "";
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-border">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="w-5 h-5 text-gray-400" />
-              <h3 className="font-semibold text-gray-900">{answer.query}</h3>
+              <MessageSquare className="w-5 h-5 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">{answer.query}</h3>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 <span>
@@ -131,21 +131,21 @@ export default function AIAnswerCard({ answer }: AIAnswerCardProps) {
               </div>
             </div>
           </div>
-          
+
           <Badge color={formatTypeColor(answer.answer_format)}>
             {answer.answer_format.replace(/_/g, " ")}
           </Badge>
         </div>
 
         {/* Answer body: list or paragraph */}
-        <div className={`prose prose-sm max-w-none ${clampClass}`}>
+        <div className={`prose prose-sm dark:prose-invert max-w-none ${clampClass}`}>
           {displayContent}
         </div>
 
         {answer.raw_answer.length > 300 && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            className="mt-3 text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1"
           >
             {expanded ? (
               <>
@@ -161,51 +161,53 @@ export default function AIAnswerCard({ answer }: AIAnswerCardProps) {
       </div>
 
       {/* Metadata */}
-      <div className="p-6 bg-gray-50">
+      <div className="p-6 bg-muted/50">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Key Concepts */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Tag className="w-4 h-4 text-gray-600" />
-              <h4 className="text-sm font-semibold text-gray-900">
+              <Tag className="w-4 h-4 text-muted-foreground" />
+              <h4 className="text-sm font-semibold text-foreground">
                 Key Concepts
               </h4>
             </div>
             {answer.key_concepts && answer.key_concepts.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {answer.key_concepts.map((concept, index) => (
-                  <span
+                  <Badge
                     key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full"
+                    variant="secondary"
+                    className="bg-blue-500/10 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 border-transparent"
                   >
                     {concept}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No concepts extracted</p>
+              <p className="text-sm text-muted-foreground">No concepts extracted</p>
             )}
           </div>
 
           {/* Entities */}
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Hash className="w-4 h-4 text-gray-600" />
-              <h4 className="text-sm font-semibold text-gray-900">Entities</h4>
+              <Hash className="w-4 h-4 text-muted-foreground" />
+              <h4 className="text-sm font-semibold text-foreground">Entities</h4>
             </div>
             {answer.entities && answer.entities.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {answer.entities.map((entity, index) => (
-                  <span
+                  <Badge
                     key={index}
-                    className="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full"
+                    variant="secondary"
+                    className="bg-purple-500/10 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 border-transparent"
                   >
                     {entity}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No entities extracted</p>
+              <p className="text-sm text-muted-foreground">No entities extracted</p>
             )}
           </div>
         </div>

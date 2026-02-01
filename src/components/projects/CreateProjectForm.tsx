@@ -102,16 +102,16 @@ export default function CreateProjectForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-6">
+    <form onSubmit={handleSubmit} className="bg-card rounded-lg border border-border p-6 shadow-sm">
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
+          <p className="text-sm text-destructive">{error}</p>
         </div>
       )}
 
       {/* Project Name */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Project Name *
         </label>
         <input
@@ -119,20 +119,20 @@ export default function CreateProjectForm() {
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           placeholder="e.g., Running Shoes SEO Optimization"
         />
       </div>
 
       {/* Description */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Description
         </label>
         <textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           rows={3}
           placeholder="Brief description of this project"
         />
@@ -140,7 +140,7 @@ export default function CreateProjectForm() {
 
       {/* Target Topic */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Target Topic / Question *
         </label>
         <input
@@ -148,20 +148,20 @@ export default function CreateProjectForm() {
           required
           value={formData.target_topic}
           onChange={(e) => setFormData({ ...formData, target_topic: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           placeholder="e.g., What are the best running shoes for beginners?"
         />
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           The main question or topic you want to optimize for
         </p>
       </div>
 
       {/* Target URLs */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Your Website URLs *
         </label>
-        <p className="text-sm text-gray-500 mb-3">
+        <p className="text-sm text-muted-foreground mb-3">
           The pages you want to optimize
         </p>
         {formData.target_urls.map((url, index) => (
@@ -170,14 +170,14 @@ export default function CreateProjectForm() {
               type="url"
               value={url}
               onChange={(e) => updateTargetUrl(index, e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
               placeholder="https://yourwebsite.com/page"
             />
             {formData.target_urls.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeTargetUrl(index)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
@@ -187,7 +187,7 @@ export default function CreateProjectForm() {
         <button
           type="button"
           onClick={addTargetUrl}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+          className="mt-2 text-sm text-primary hover:text-primary/90 font-medium flex items-center gap-1"
         >
           <Plus className="w-4 h-4" />
           Add another URL
@@ -196,10 +196,10 @@ export default function CreateProjectForm() {
 
       {/* Competitor URLs */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Competitor URLs (Optional)
         </label>
-        <p className="text-sm text-gray-500 mb-3">
+        <p className="text-sm text-muted-foreground mb-3">
           Reference pages to analyze and compare against
         </p>
         {formData.competitor_urls.map((url, index) => (
@@ -208,13 +208,13 @@ export default function CreateProjectForm() {
               type="url"
               value={url}
               onChange={(e) => updateCompetitorUrl(index, e.target.value)}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="flex-1 px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
               placeholder="https://competitor.com/page"
             />
             <button
               type="button"
               onClick={() => removeCompetitorUrl(index)}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+              className="p-2 text-destructive hover:bg-destructive/10 rounded-lg"
             >
               <Trash2 className="w-5 h-5" />
             </button>
@@ -223,7 +223,7 @@ export default function CreateProjectForm() {
         <button
           type="button"
           onClick={addCompetitorUrl}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+          className="mt-2 text-sm text-primary hover:text-primary/90 font-medium flex items-center gap-1"
         >
           <Plus className="w-4 h-4" />
           Add competitor URL
@@ -231,7 +231,7 @@ export default function CreateProjectForm() {
       </div>
 
       {/* Submit */}
-      <div className="flex gap-3 pt-6 border-t border-gray-200">
+      <div className="flex gap-3 pt-6 border-t border-border">
         <Button
           type="button"
           variant="outline"

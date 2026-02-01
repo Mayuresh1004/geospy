@@ -1,7 +1,12 @@
 // app/api/projects/[id]/analyze/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { db } from '@/lib/db'; // Use existing db client
+import { db } from '@/lib/db';
+
+const GEMINI_EMBED_MODEL = 'gemini-embedding-001';
+const GEMINI_EMBED_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_EMBED_MODEL}:embedContent`;
+const SEMANTIC_SIMILARITY_THRESHOLD = 0.65;
+const MAX_TOPICS_TO_EMBED = 40;
 
 interface RouteProps {
   params: Promise<{
@@ -83,20 +88,40 @@ export async function POST(
     // Extract topics from AI answer
     const aiTopics = aiAnswer.key_concepts || [];
 
-    // Extract all topics from competitors
+    // Extract all topics from competitors (H2/H3 headings)
     const competitorTopics = extractAllTopics(competitors);
 
-    console.log('AI Topics:', aiTopics);
-    console.log('Competitor Topics:', competitorTopics);
+    console.log('AI Topics:', aiTopics.length, 'Competitor Topics:', competitorTopics.length);
 
-    // Find gaps
-    const topicsPresent = aiTopics.filter((t: string) => 
-      competitorTopics.some(ct => normalizeText(ct).includes(normalizeText(t)))
-    );
+    // Semantic topic matching (embeddings) with fallback to substring
+    const apiKey = process.env.GEMINI_API_KEY;
+    let topicsPresent: string[];
+    let topicsMissing: string[];
+    let semanticCoverage: number | null = null;
 
-    const topicsMissing = competitorTopics.filter(t => 
-      !aiTopics.some((at: string) => normalizeText(at).includes(normalizeText(t)))
-    );
+    if (apiKey && aiTopics.length > 0 && competitorTopics.length > 0) {
+      const semanticResult = await computeSemanticTopicMatch(aiTopics, competitorTopics, apiKey);
+      if (semanticResult) {
+        topicsPresent = semanticResult.topicsPresent;
+        topicsMissing = semanticResult.topicsMissing;
+        semanticCoverage = semanticResult.semanticCoverage;
+        console.log('Using semantic topic match. Coverage:', semanticCoverage + '%');
+      } else {
+        topicsPresent = aiTopics.filter((t: string) =>
+          competitorTopics.some(ct => normalizeText(ct).includes(normalizeText(t)))
+        );
+        topicsMissing = competitorTopics.filter(t =>
+          !aiTopics.some((at: string) => normalizeText(at).includes(normalizeText(t)))
+        );
+      }
+    } else {
+      topicsPresent = aiTopics.filter((t: string) =>
+        competitorTopics.some(ct => normalizeText(ct).includes(normalizeText(t)))
+      );
+      topicsMissing = competitorTopics.filter(t =>
+        !aiTopics.some((at: string) => normalizeText(at).includes(normalizeText(t)))
+      );
+    }
 
     // Topics weakly represented: in AI answer but only briefly (vs competitor depth)
     const topicsWeak = computeTopicsWeak(aiAnswer, topicsPresent);
@@ -112,6 +137,7 @@ export async function POST(
       topicsMissing: topicsMissing.length,
       topicsWeak: topicsWeak.length,
       depthScore,
+      semanticCoverage: semanticCoverage ?? 'n/a',
     });
 
     // Save analysis
@@ -127,9 +153,10 @@ export async function POST(
         content_depth_score: depthScore,
         competitor_coverage: {
           total_competitors: competitors.length,
-          avg_word_count: competitors.length > 0 
-            ? competitors.reduce((sum, c) => sum + (c.word_count || 0), 0) / competitors.length 
+          avg_word_count: competitors.length > 0
+            ? competitors.reduce((sum, c) => sum + (c.word_count || 0), 0) / competitors.length
             : 0,
+          semantic_coverage: semanticCoverage ?? undefined,
         },
       })
       .select()
@@ -175,7 +202,7 @@ function extractAllTopics(scrapedContent: any[]): string[] {
     
     [...h2s, ...h3s].forEach(heading => {
       const normalized = normalizeHeading(heading);
-      if (normalized.length > 3) {
+      if (normalized.length > 3 && isValidContentTopic(normalized)) {
         allTopics.add(normalized);
       }
     });
@@ -193,6 +220,143 @@ function normalizeHeading(heading: string): string {
 
 function normalizeText(text: string): string {
   return text.toLowerCase().trim();
+}
+
+// Normalized (lowercase, no punctuation) nav/UI/widget phrases — not real content topics
+const NAV_UI_TOPIC_BLOCKLIST = new Set([
+  'login', 'register', 'sign in', 'sign up', 'logout', 'menu', 'navigation', 'post navigation',
+  'search', 'home', 'about', 'about us', 'contact', 'contact us', 'follow us', 'subscribe',
+  'categories', 'tags', 'archives', 'comments', 'share', 'sidebar', 'footer', 'header',
+  'internal links', 'internal links for you', 'related posts', 'related articles', 'you may also like',
+  'popular posts', 'recent posts', 'categories for you', 'posts for you', 'related content',
+  'cookie policy', 'privacy policy', 'terms of service', 'terms and conditions', 'copyright',
+  'breadcrumb', 'breadcrumbs', 'skip to content', 'main content', 'table of contents',
+  'social media', 'follow', 'tweet', 'like us', 'newsletter', 'newsletter signup',
+  'advertisement', 'ad', 'sponsored', 'recommended for you', 'trending', 'most read',
+]);
+
+/**
+ * Reject URL-like, slug-like, nav/UI/widget "topics" so they never become recommendations.
+ */
+function isValidContentTopic(topic: string): boolean {
+  const t = topic.trim();
+  if (t.length < 4) return false;
+  const lower = t.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  if (lower.includes('http') || lower.includes('www')) return false;
+  if (lower.includes('.com') || lower.includes('.co.') || lower.includes('couk') || lower.includes('author/')) return false;
+  const noSpaces = t.replace(/\s+/g, '');
+  if (noSpaces.length > 40) return false;
+  const letterCount = (t.match(/[a-z]/gi) || []).length;
+  if (letterCount < 3 || letterCount / (t.length || 1) < 0.5) return false;
+  if (NAV_UI_TOPIC_BLOCKLIST.has(lower)) return false;
+  const words = lower.split(/\s+/).filter(Boolean);
+  if (words.length === 1 && NAV_UI_TOPIC_BLOCKLIST.has(words[0])) return false;
+  for (const blocked of NAV_UI_TOPIC_BLOCKLIST) {
+    if (lower === blocked || lower.startsWith(blocked + ' ') || lower.endsWith(' ' + blocked)) return false;
+  }
+  return true;
+}
+
+// =========================
+// Semantic matching (Gemini embeddings)
+// =========================
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+  let dot = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+
+async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
+  const res = await fetch(`${GEMINI_EMBED_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: `models/${GEMINI_EMBED_MODEL}`,
+      content: { parts: [{ text: text.slice(0, 8000) }] },
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Embed failed: ${res.status} ${err}`);
+  }
+  const data = await res.json();
+  const values = data?.embedding?.values;
+  if (!Array.isArray(values)) throw new Error('Invalid embed response');
+  return values;
+}
+
+async function getEmbeddings(texts: string[], apiKey: string): Promise<number[][]> {
+  const results: number[][] = [];
+  for (let i = 0; i < texts.length; i++) {
+    const vec = await getEmbedding(texts[i], apiKey);
+    results.push(vec);
+  }
+  return results;
+}
+
+/**
+ * Semantic topic match using embeddings. Returns null if embedding API fails (caller should fallback to substring).
+ */
+async function computeSemanticTopicMatch(
+  aiTopics: string[],
+  competitorTopics: string[],
+  apiKey: string
+): Promise<{
+  topicsPresent: string[];
+  topicsMissing: string[];
+  semanticCoverage: number;
+} | null> {
+  const aiSlice = aiTopics.slice(0, MAX_TOPICS_TO_EMBED).filter((t) => t.trim().length > 2);
+  const compSlice = competitorTopics.slice(0, MAX_TOPICS_TO_EMBED).filter((t) => t.trim().length > 2);
+  if (aiSlice.length === 0 || compSlice.length === 0) return null;
+
+  try {
+    const [aiEmbeddings, compEmbeddings] = await Promise.all([
+      getEmbeddings(aiSlice, apiKey),
+      getEmbeddings(compSlice, apiKey),
+    ]);
+
+    const topicsPresent: string[] = [];
+    for (let i = 0; i < aiSlice.length; i++) {
+      let maxSim = 0;
+      for (let j = 0; j < compSlice.length; j++) {
+        const sim = cosineSimilarity(aiEmbeddings[i], compEmbeddings[j]);
+        if (sim > maxSim) maxSim = sim;
+      }
+      if (maxSim >= SEMANTIC_SIMILARITY_THRESHOLD) {
+        topicsPresent.push(aiSlice[i]);
+      }
+    }
+
+    const topicsMissing: string[] = [];
+    for (let j = 0; j < compSlice.length; j++) {
+      let maxSim = 0;
+      for (let i = 0; i < aiSlice.length; i++) {
+        const sim = cosineSimilarity(compEmbeddings[j], aiEmbeddings[i]);
+        if (sim > maxSim) maxSim = sim;
+      }
+      if (maxSim < SEMANTIC_SIMILARITY_THRESHOLD) {
+        topicsMissing.push(compSlice[j]);
+      }
+    }
+
+    const covered = compSlice.length - topicsMissing.length;
+    const semanticCoverage = compSlice.length > 0 ? Math.round((covered / compSlice.length) * 100) : 0;
+
+    return { topicsPresent, topicsMissing, semanticCoverage };
+  } catch (err) {
+    console.warn('Semantic topic match failed, falling back to substring:', err);
+    return null;
+  }
 }
 
 /**
@@ -276,9 +440,9 @@ async function generateRecommendations(
 ) {
   const recommendations = [];
 
-  // Generate recommendations for missing topics (limit to top 5)
-  const missingTopics = Array.isArray(analysis.topics_missing) 
-    ? analysis.topics_missing.slice(0, 5) 
+  // Generate recommendations for missing topics (limit to top 5, skip URL/junk)
+  const missingTopics = Array.isArray(analysis.topics_missing)
+    ? analysis.topics_missing.filter(isValidContentTopic).slice(0, 5)
     : [];
 
   const framing = 'What to add or modify on your website(s) so generative AI engines can better understand, extract, and reuse this content in AI-generated answers:';
@@ -300,8 +464,10 @@ async function generateRecommendations(
     });
   }
 
-  // Weakly represented topics: expand coverage on your site
-  const weakTopics = Array.isArray(analysis.topics_weak) ? analysis.topics_weak.slice(0, 3) : [];
+  // Weakly represented topics: expand coverage on your site (skip URL/junk)
+  const weakTopics = Array.isArray(analysis.topics_weak)
+    ? analysis.topics_weak.filter(isValidContentTopic).slice(0, 3)
+    : [];
   for (const topic of weakTopics) {
     recommendations.push({
       analysis_id: analysisId,

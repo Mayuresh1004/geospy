@@ -4,6 +4,8 @@
 import Link from "next/link";
 import { Calendar, Target } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/button";
 
 interface ProjectCardProps {
   project: {
@@ -17,38 +19,36 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project }: ProjectCardProps) {
   return (
-    <Link href={`/projects/${project.id}`}>
-      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          {project.name}
-        </h3>
-        
-        {project.description && (
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-            {project.description}
-          </p>
-        )}
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Target className="w-4 h-4" />
-            <span className="truncate">{project.target_topic}</span>
+    <Link href={`/projects/${project.id}`} className="block h-full">
+      <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 group">
+        <CardHeader>
+          <CardTitle className="group-hover:text-primary transition-colors">{project.name}</CardTitle>
+          {project.description && (
+            <CardDescription className="line-clamp-2">
+              {project.description}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Target className="w-4 h-4 text-primary" />
+              <span className="truncate font-medium">{project.target_topic}</span>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+        </CardContent>
+        <CardFooter className="flex justify-between items-center text-sm text-muted-foreground border-t pt-4">
+          <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             <span>
-              Created {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
+              {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
             </span>
           </div>
-        </div>
-
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <span className="text-sm font-medium text-blue-600 hover:text-blue-700">
+          <span className="text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
             View Project →
           </span>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </Link>
   );
 }

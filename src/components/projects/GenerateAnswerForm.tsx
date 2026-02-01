@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Loader2, Sparkles } from "lucide-react";
 
 interface GenerateAnswerFormProps {
@@ -80,14 +81,16 @@ export default function GenerateAnswerForm({
         </div>
       )}
 
+
+
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Enter a question or topic (e.g. Top 5 best Mobiles under ₹30k)"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1"
             required
           />
           <Button
@@ -101,7 +104,7 @@ export default function GenerateAnswerForm({
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
-                <Sparkles className="w-4 h-4 mr-1.5" />
+                <Sparkles className="w-4 h-4 mr-1.5 text-purple-600 dark:text-purple-400" />
                 Enhance
               </>
             )}

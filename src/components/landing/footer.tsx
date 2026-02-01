@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="border-t border-border px-8 min-w-full bg-background">
+    <footer className="border-t border-border px-8 min-w-full bg-background/80 backdrop-blur-sm supports-backdrop-filter:bg-background/60">
       <div className="container py-12 md:py-16">
         <div className="flex flex-col sm:flex-row justify-around w-full text-center gap-8">
           <div>

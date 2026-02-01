@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { enhanceQuery } from "@/lib/geo/enhanceQuery";
 
 interface RouteProps {
   params: Promise<{
@@ -10,7 +11,6 @@ interface RouteProps {
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY!;
 const GEMINI_TIMEOUT_MS = 15000;
 
 export async function POST(
@@ -49,12 +49,16 @@ export async function POST(
     }
 
     // =========================
-    // Generate answers (parallel)
+    // Enhance each query in background, then generate answers (parallel)
     // =========================
+    const apiKey = process.env.GEMINI_API_KEY ?? "";
     const results = await Promise.all(
-      queries.map((query) =>
-        generateSingleAnswer(query, projectId)
-      )
+      queries.map(async (query) => {
+        const enhanced =
+          apiKey ? await enhanceQuery(query.trim(), apiKey).catch(() => null) : null;
+        const queryToUse = enhanced ?? query.trim();
+        return generateSingleAnswer(queryToUse, projectId);
+      })
     );
 
     const succeeded = results.filter(r => r.status === "success").length;
@@ -98,10 +102,12 @@ async function generateSingleAnswer(
 ) {
   try {
     const prompt = `
-Answer the following question.
+Answer the following question in a comprehensive, detailed way. Your answer should:
+- Be 150-350 words (or longer if the topic needs it).
+- Cover the main points with enough detail to be useful (e.g. for lists: 2-4 sentences per item with key benefits or features).
+- Use clear structure: short intro, then body with distinct points or paragraphs, then a brief conclusion if appropriate.
 
-Then return ONLY valid JSON in the exact format below.
-No markdown. No explanation. No backticks.
+Then return ONLY valid JSON in the exact format below. No markdown. No explanation. No backticks.
 
 Question:
 ${query}
@@ -121,7 +127,7 @@ JSON format:
     );
 
     const response = await fetch(
-      `${GEMINI_URL}?key=${GEMINI_API_KEY}`,
+      `${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         signal: controller.signal,

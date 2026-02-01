@@ -55,18 +55,18 @@ export default function ProjectProgress({
   const handleScrape = async () => {
     setLoading("scrape");
     setError("");
-    
+
     try {
       const response = await fetch(`/api/projects/${projectId}/scrape`, {
         method: "POST",
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Failed to scrape content");
       }
-      
+
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -78,12 +78,12 @@ export default function ProjectProgress({
   const handleGenerateAnswers = async () => {
     setLoading("generate");
     setError("");
-    
+
     try {
       // Get project details to use target_topic
       const projectResponse = await fetch(`/api/projects/${projectId}`);
       const projectData = await projectResponse.json();
-      
+
       if (!projectData.project) {
         throw new Error("Failed to load project data");
       }
@@ -95,13 +95,13 @@ export default function ProjectProgress({
           queries: [projectData.project.target_topic], // Use the target topic
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate answers");
       }
-      
+
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -113,19 +113,19 @@ export default function ProjectProgress({
   const handleAnalyze = async () => {
     setLoading("analyze");
     setError("");
-    
+
     try {
       // Get the latest AI answer to analyze
       const projectResponse = await fetch(`/api/projects/${projectId}`);
       const projectData = await projectResponse.json();
-      
+
       if (!projectData.aiAnswers || projectData.aiAnswers.length === 0) {
         throw new Error("No AI answers to analyze. Please generate AI answers first.");
       }
-      
+
       // Use the most recent AI answer
       const latestAnswer = projectData.aiAnswers[0];
-      
+
       const response = await fetch(`/api/projects/${projectId}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,13 +133,13 @@ export default function ProjectProgress({
           ai_answer_id: latestAnswer.id,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Failed to analyze");
       }
-      
+
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -157,7 +157,7 @@ export default function ProjectProgress({
   return (
     <div className="bg-card border border-border rounded-xl p-6 mb-8 shadow-sm">
       <h2 className="text-xl font-semibold text-foreground mb-6">Project Progress</h2>
-      
+
       {error && (
         <div className="mb-4 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
           <p className="text-sm text-destructive">{error}</p>
@@ -168,11 +168,11 @@ export default function ProjectProgress({
         {steps.map((step) => (
           <div
             key={step.id}
-            className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border"
+            className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50"
           >
             <div className="flex items-center gap-4">
               {step.completed ? (
-                <CheckCircle2 className="w-6 h-6 text-chart-2 shrink-0" />
+                <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
               ) : (
                 <Circle className="w-6 h-6 text-muted-foreground shrink-0" />
               )}
@@ -200,15 +200,15 @@ export default function ProjectProgress({
                 )}
               </Button>
             )}
-            
+
             {step.completed && (
-              <span className="text-sm text-chart-2 font-medium shrink-0">✓ Complete</span>
+              <span className="text-sm text-primary font-medium shrink-0">✓ Complete</span>
             )}
           </div>
         ))}
       </div>
-      
-      <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-xl">
+
+      <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl">
         <p className="text-sm text-primary">
           <strong>Tip:</strong> Complete steps in order. Each step requires the previous one to finish.
         </p>

@@ -15,7 +15,7 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="container min-w-full sm:px-36 py-24 md:py-32 bg-muted/30"
+      className="relative container min-w-full sm:px-36 py-24 md:py-32 bg-muted/50 overflow-hidden"
     >
       <div className="flex flex-col items-center gap-4 text-center mb-16">
         <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-balance">
@@ -30,7 +30,7 @@ export function HowItWorks() {
         {steps.slice(0, 3).map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.step} className="border-border/50">
+            <Card key={item.step} className="border-border/50 bg-background/50 backdrop-blur-sm transition-all hover:shadow-md">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
@@ -51,7 +51,7 @@ export function HowItWorks() {
         {steps.slice(3).map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.step} className="border-border/50">
+            <Card key={item.step} className="border-border/50 bg-background/50 backdrop-blur-sm transition-all hover:shadow-md">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">

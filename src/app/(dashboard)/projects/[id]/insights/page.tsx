@@ -54,19 +54,19 @@ export default async function InsightsPage({
         </Link>
 
         <div className="flex items-center gap-3 mb-2">
-          <Sparkles className="w-8 h-8 text-purple-600" />
-          <h1 className="text-3xl font-bold text-gray-900">
+          <Sparkles className="w-8 h-8 text-purple-500" />
+          <h1 className="text-3xl font-bold text-foreground">
             AI Insights
           </h1>
         </div>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           View how generative AI responds to your target topics
         </p>
       </div>
 
       {/* Generate New Answer */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-card border border-border rounded-lg p-6 mb-8 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground mb-4">
           Generate New Answer
         </h2>
         <GenerateAnswerForm projectId={projectId} />
@@ -75,7 +75,7 @@ export default async function InsightsPage({
       {/* AI Answers List */}
       {aiAnswers && aiAnswers.length > 0 ? (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Generated Answers ({aiAnswers.length})
           </h2>
           {aiAnswers.map((answer) => (
@@ -86,12 +86,12 @@ export default async function InsightsPage({
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <Sparkles className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="text-center py-12 bg-card rounded-lg border border-border shadow-sm">
+          <Sparkles className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             No AI answers yet
           </h3>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Generate your first AI answer to see insights
           </p>
         </div>
