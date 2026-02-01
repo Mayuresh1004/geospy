@@ -1,4 +1,4 @@
-// app/api/projects/[id]/analyze/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -31,7 +31,6 @@ export async function POST(
             );
         }
 
-        // Verify project ownership
         const { data: project, error: projectError } = await db
             .from('projects')
             .select('*')
@@ -43,7 +42,6 @@ export async function POST(
             return NextResponse.json({ error: 'Project not found' }, { status: 404 });
         }
 
-        // Get AI answer
         const { data: aiAnswer, error: answerError } = await db
             .from('ai_answers')
             .select('*')
@@ -55,7 +53,6 @@ export async function POST(
             return NextResponse.json({ error: 'AI answer not found' }, { status: 404 });
         }
 
-        // Get all URLs for this project
         const { data: urls } = await db
             .from('urls')
             .select('id, type')
@@ -68,7 +65,6 @@ export async function POST(
             );
         }
 
-        // Get scraped content from competitors AND target
         const competitorUrlIds = urls.filter(u => u.type === 'competitor').map(u => u.id);
         const targetUrlIds = urls.filter(u => u.type === 'target').map(u => u.id);
 
@@ -95,36 +91,25 @@ export async function POST(
 
         console.log(`Analyzing with ${targets.length} target pages and ${competitors.length} competitor pages...`);
 
-        // Extract all topics from competitors AND targets
         const aiTopics = aiAnswer.key_concepts || [];
         const competitorTopics = extractAllTopics(competitors);
         const targetTopics = extractAllTopics(targets);
 
-        console.log('AI Topics:', aiTopics.length, 'Competitor:', competitorTopics.length, 'Target:', targetTopics.length);
-
-        // Semantic topic matching (embeddings) with fallback to substring
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // 1. AI vs Competitors (for "Semantic Coverage" score)
         let semanticCoverage: number = 0;
 
-        // 2. AI vs Target (for "Missing content" recommendations) -- The Real Gap
-        let topicsMissing: string[] = []; // In AI but NOT in Target
-        let topicsPresent: string[] = []; // In AI AND in Target
-        let competitiveGaps: string[] = []; // In Competitors but NOT in Target (and relevant)
+        let topicsMissing: string[] = [];
+        let topicsPresent: string[] = [];
+        let competitiveGaps: string[] = [];
 
-        // Helper to check presence
         const isTopicInList = (topic: string, list: string[]) =>
             list.some(t => normalizeText(t).includes(normalizeText(topic)) || normalizeText(topic).includes(normalizeText(t)));
 
-        // A. Calculate Semantic Coverage (AI vs Competitors) - Keep for score
-        // If no competitors, use default logic or skip
         if (competitorTopics.length > 0) {
-            // Default to simple string match
             const coveredByComps = aiTopics.filter((t: string) => isTopicInList(t, competitorTopics));
             semanticCoverage = Math.round((coveredByComps.length / (aiTopics.length || 1)) * 100);
 
-            // Try stronger Semantic Match (Embeddings) if API Key exists
             if (apiKey) {
                 try {
                     const semanticResult = await computeSemanticTopicMatch(aiTopics, competitorTopics, apiKey);
@@ -138,29 +123,18 @@ export async function POST(
             }
         }
 
-        // B. Calculate User Gaps
         if (targetTopics.length === 0) {
-            // If we can't read user content, assume they missed everything
             topicsMissing = aiTopics;
         } else {
-            // Missing = AI has it, User doesn't
             topicsMissing = aiTopics.filter(t => !isTopicInList(t, targetTopics));
             topicsPresent = aiTopics.filter(t => isTopicInList(t, targetTopics));
         }
 
-        // C. Competitive Gaps (Bonus: What do comps have that I don't?)
-        // Filter to topics that appear in at least 50% of competitors
-        // Simplified: Just take top competitor topics that are missing from user
         const commonCompetitorTopics = competitorTopics.filter(t => !isTopicInList(t, targetTopics)).slice(0, 5);
         competitiveGaps = commonCompetitorTopics;
 
-        // Topics weakly represented: in AI answer but only briefly (vs User content depth)
         const topicsWeak = computeTopicsWeak(targets, topicsPresent);
-
-        // Analyze structural patterns
         const patterns = analyzeStructuralPatterns(aiAnswer, competitors);
-
-        // Calculate depth score (User vs Competitors)
         const depthScore = calculateDepthScore(targets, competitors);
 
         console.log('Analysis results:', {
@@ -171,7 +145,6 @@ export async function POST(
             semanticCoverage,
         });
 
-        // Save analysis
         const { data: analysis, error: insertError } = await db
             .from('analysis_results')
             .insert({
@@ -198,9 +171,6 @@ export async function POST(
             throw insertError;
         }
 
-        console.log('Analysis saved:', analysis.id);
-
-        // Generate recommendations based on analysis
         await generateRecommendations(analysis.id, projectId, analysis);
 
         return NextResponse.json({
@@ -253,7 +223,6 @@ function normalizeText(text: string): string {
     return text.toLowerCase().trim();
 }
 
-// Normalized (lowercase, no punctuation) nav/UI/widget phrases — not real content topics
 const NAV_UI_TOPIC_BLOCKLIST = new Set([
     'login', 'register', 'sign in', 'sign up', 'logout', 'menu', 'navigation', 'post navigation',
     'search', 'home', 'about', 'about us', 'contact', 'contact us', 'follow us', 'subscribe',
@@ -266,9 +235,6 @@ const NAV_UI_TOPIC_BLOCKLIST = new Set([
     'advertisement', 'ad', 'sponsored', 'recommended for you', 'trending', 'most read',
 ]);
 
-/**
- * Reject URL-like, slug-like, nav/UI/widget "topics" so they never become recommendations.
- */
 function isValidContentTopic(topic: string): boolean {
     const t = topic.trim();
     if (t.length < 4) return false;
@@ -287,10 +253,6 @@ function isValidContentTopic(topic: string): boolean {
     }
     return true;
 }
-
-// =========================
-// Semantic matching (Gemini embeddings)
-// =========================
 
 function cosineSimilarity(a: number[], b: number[]): number {
     if (a.length !== b.length || a.length === 0) return 0;
@@ -359,25 +321,18 @@ async function computeSemanticTopicMatch(
     }
 }
 
-/**
- * Topics that appear in the AI answer and User Content, but User Content is weak.
- */
 function computeTopicsWeak(targets: any[], topicsPresent: string[]): string[] {
-    // If no target content, everything is weak (or missing)
     if (!targets || targets.length === 0) return [];
 
     const weak: string[] = [];
-    // Combine all target text
     const rawTarget = targets.map(t => (t.content || '') + ' ' + (t.clean_text || '')).join(' ').toLowerCase();
 
     for (const topic of topicsPresent) {
         const normalizedTopic = normalizeText(topic);
         if (normalizedTopic.length < 4) continue;
 
-        // Check for a substantial block of text about this topic in USER content
         const topicIndex = rawTarget.indexOf(normalizedTopic);
 
-        // If not found (shouldn't happen if topicsPresent is correct) or context is short
         if (topicIndex < 0) {
             weak.push(topic);
             continue;
@@ -386,7 +341,6 @@ function computeTopicsWeak(targets: any[], topicsPresent: string[]): string[] {
         const snippet = rawTarget.slice(Math.max(0, topicIndex - 20), topicIndex + normalizedTopic.length + 80);
         const snippetWordCount = snippet.split(/\s+/).filter(Boolean).length;
 
-        // Weak = topic present but only brief mention (< 20 words context)
         if (snippetWordCount < 20) {
             weak.push(topic);
         }
@@ -419,24 +373,17 @@ function analyzeStructuralPatterns(aiAnswer: any, competitors: any[]) {
     };
 }
 
-/**
- * Compare User depth vs Competitor Avg depth
- */
 function calculateDepthScore(targets: any[], competitors: any[]): number {
-    if (targets.length === 0) return 0; // No content = 0 score
-
-    // Calculate Target Stats
+    if (targets.length === 0) return 0;
     const targetWordCount = targets.reduce((sum, t) => sum + (t.word_count || 0), 0);
     const targetTopicsCount = targets.reduce((sum, t) => {
         return sum + (t.h2_headings?.length || 0) + (t.h3_headings?.length || 0);
     }, 0);
 
-    // If no competitors, assume baseline
     if (competitors.length === 0) {
         return Math.min(targetWordCount / 1000 * 50, 50) + Math.min(targetTopicsCount / 5 * 50, 50);
     }
 
-    // Competitor Stats
     const avgCompWords = competitors.reduce((sum, c) => sum + (c.word_count || 0), 0) / competitors.length;
     const avgCompTopics = competitors.reduce((sum, c) => {
         return sum + (c.h2_headings?.length || 0) + (c.h3_headings?.length || 0);
@@ -455,14 +402,12 @@ async function generateRecommendations(
 ) {
     const recommendations = [];
 
-    // Generate recommendations for missing topics (limit to top 3 for LLM performance)
     const missingTopics = Array.isArray(analysis.topics_missing)
         ? analysis.topics_missing.filter(isValidContentTopic).slice(0, 3)
         : [];
 
     const framing = 'What to add or modify on your website(s) so generative AI engines can better understand, extract, and reuse this content in AI-generated answers:';
 
-    // 1. HIGH PRIORITY: Missing Topics (LLM Generated)
     for (const topic of missingTopics) {
         const prompt = `
       You are an expert in Generative Engine Optimization (GEO).
@@ -498,7 +443,6 @@ async function generateRecommendations(
         });
     }
 
-    // 2. MEDIUM PRIORITY: Weak Topics (LLM Generated)
     const weakTopics = Array.isArray(analysis.topics_weak)
         ? analysis.topics_weak.filter(isValidContentTopic).slice(0, 3)
         : [];
@@ -536,7 +480,6 @@ async function generateRecommendations(
         });
     }
 
-    // 3. Structural recommendations (Templates)
     if (analysis.structural_patterns?.preferred_format === 'bullet_list') {
         recommendations.push({
             analysis_id: analysisId,
@@ -553,7 +496,6 @@ async function generateRecommendations(
         });
     }
 
-    // FAQ format recommendation
     recommendations.push({
         analysis_id: analysisId,
         project_id: projectId,
@@ -568,7 +510,6 @@ async function generateRecommendations(
         expected_impact: 'Increases chance your content is used in answer-style AI responses',
     });
 
-    // Glossary / definitions recommendation
     if (analysis.structural_patterns?.uses_definitions) {
         recommendations.push({
             analysis_id: analysisId,
@@ -585,7 +526,6 @@ async function generateRecommendations(
         });
     }
 
-    // Step-by-step format recommendation
     if (analysis.structural_patterns?.preferred_format === 'step_by_step') {
         recommendations.push({
             analysis_id: analysisId,
@@ -602,7 +542,6 @@ async function generateRecommendations(
         });
     }
 
-    // Depth recommendation
     if (analysis.content_depth_score < 60) {
         const avgH2s = analysis.structural_patterns?.competitor_avg_h2s || 5;
         recommendations.push({
@@ -620,7 +559,6 @@ async function generateRecommendations(
         });
     }
 
-    // Insert all recommendations
     if (recommendations.length > 0) {
         const { error } = await db
             .from('recommendations')

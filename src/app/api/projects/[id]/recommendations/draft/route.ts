@@ -25,7 +25,6 @@ export async function POST(
             return NextResponse.json({ error: 'Recommendation data required' }, { status: 400 });
         }
 
-        // Verify ownership
         const { data: project } = await db
             .from('projects')
             .select('id')
@@ -37,7 +36,6 @@ export async function POST(
             return NextResponse.json({ error: 'Project not found' }, { status: 404 });
         }
 
-        // Prepare context for the draft
         const topic = recommendation.title.replace('Add section on ', '').replace('Expand coverage of ', '').replace(/"/g, '');
         const context = recommendation.description;
         const keywords = recommendation.action_items?.map((item: any) => item.action).join(', ') || '';

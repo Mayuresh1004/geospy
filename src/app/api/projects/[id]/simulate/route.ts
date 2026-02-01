@@ -61,7 +61,6 @@ export async function POST(
             Output only the new answer text.
         `;
 
-        // 4. Generate Future
         const futureAnswer = await generateText(prompt);
 
         return NextResponse.json({
