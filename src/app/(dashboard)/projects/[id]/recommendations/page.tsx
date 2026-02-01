@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Target, AlertCircle } from "lucide-react";
 import AnalyzeButton from "@/components/projects/AnalyzeButton";
 import RecommendationCard from "@/components/projects/RecommendationCard";
+import Simulator from "@/components/projects/Simulator";
 
 interface PageProps {
   params: Promise<{
@@ -88,13 +89,19 @@ export default async function RecommendationsPage({
           </Button>
         </Link>
 
-        <div className="flex items-center gap-3 mb-2">
-          <Target className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">
-            Recommendations
-          </h1>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
+          <div className="flex items-center gap-3">
+            <Target className="w-8 h-8 text-primary" />
+            <h1 className="text-3xl font-bold text-foreground">
+              Recommendations
+            </h1>
+          </div>
+
+          {/* Simulator Button */}
+          <Simulator projectId={projectId} />
         </div>
-        <p className="text-muted-foreground">
+
+        <p className="text-muted-foreground mt-2">
           Actionable insights to improve your GEO performance
         </p>
       </div>
