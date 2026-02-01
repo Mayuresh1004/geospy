@@ -19,9 +19,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SaaS MVP - Build and Scale Your Product",
+  title: "GEOspy - Generative Engine Optimization Platform",
   description:
-    "The complete platform to build and scale your SaaS product with modern tools and best practices.",
+    "Optimize your content for the AI era. Ensure your site is understood, cited, and recommended by generative engines like ChatGPT, Gemini, and Perplexity.",
   generator: "v0.app",
 };
 

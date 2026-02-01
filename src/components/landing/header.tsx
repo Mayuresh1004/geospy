@@ -15,7 +15,7 @@ export function Header() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold">
             <Sparkles className="h-6 w-6 text-primary" />
-            GEO
+            GEOspy
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

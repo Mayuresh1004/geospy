@@ -38,7 +38,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold mb-4">About GEO</h4>
+            <h4 className="text-sm font-semibold mb-4">About GEOspy</h4>
             <ul className="space-y-2 text-sm">
               <li className="text-muted-foreground max-w-xs">
                 Generative Engine Optimization helps your content get understood and reused by AI-driven search and discovery.
@@ -68,7 +68,7 @@ export function Footer() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </div>
-            <h3 className="text-lg font-semibold">GEO</h3>
+            <h3 className="text-lg font-semibold">GEOspy</h3>
           </div>
           <p className="text-sm text-muted-foreground max-w-md">
             Optimize for AI-driven search and discovery. Ensure your content is clearly understood and reliably reused by generative AI.
@@ -76,7 +76,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border/40 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} GEO. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} GEOspy. All rights reserved.</p>
         </div>
       </div>
     </footer>
