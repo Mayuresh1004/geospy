@@ -4,6 +4,11 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import ProjectProgress from "@/components/projects/ProjectProgress";
 import DeleteProjectButton from "@/components/projects/DeleteProjectButton";
+import OptimizationGauge from "@/components/projects/OptimizationGauge";
+import HistoryChart from "@/components/projects/HistoryChart";
+import AnalyzeButton from "@/components/projects/AnalyzeButton";
+import CompetitorGapAnalysis from "@/components/projects/CompetitorGapAnalysis";
+import ExportReportButton from "@/components/projects/ExportReportButton";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Target } from "lucide-react";
 import React from "react";
@@ -72,20 +77,19 @@ export default async function ProjectPage({ params }: PageProps) {
   // =========================
   // Latest analysis (for depth + semantic coverage)
   // =========================
-  const { data: latestAnalysis } = await db
+  const { data: analysisHistory } = await db
     .from("analysis_results")
     .select("*")
     .eq("project_id", id)
-    .order("analyzed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("analyzed_at", { ascending: false });
+
+  const latestAnalysis = analysisHistory?.[0];
 
   const targetUrls = urls?.filter((u) => u.type === "target") ?? [];
   const competitorUrls = urls?.filter((u) => u.type === "competitor") ?? [];
 
   return (
     <div>
-      {/* Header */}
       {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -98,13 +102,19 @@ export default async function ProjectPage({ params }: PageProps) {
             </p>
           )}
         </div>
-        <DeleteProjectButton
-          projectId={id}
-          projectName={project.name}
-          variant="outline"
-          size="sm"
-          className="shrink-0 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
-        />
+        <div className="flex items-center gap-2">
+          <AnalyzeButton projectId={id} />
+          {latestAnalysis && (
+            <ExportReportButton project={project} analysis={latestAnalysis} />
+          )}
+          <DeleteProjectButton
+            projectId={id}
+            projectName={project.name}
+            variant="outline"
+            size="default"
+            className="shrink-0 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+          />
+        </div>
       </div>
 
       {/* Target Topic */}
@@ -131,26 +141,40 @@ export default async function ProjectPage({ params }: PageProps) {
 
       {/* Analysis scores (depth + semantic coverage) */}
       {latestAnalysis && (
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-sm font-medium text-muted-foreground mb-1">Depth score</p>
-            <p className="text-2xl font-bold text-foreground">
-              {latestAnalysis.content_depth_score ?? "—"}/100
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Length & topic coverage vs competitors
-            </p>
+        <div className="mb-8 space-y-8">
+          <div className="p-6 rounded-2xl border border-border/50 bg-gradient-to-b from-muted/20 to-transparent">
+            <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-brand-500" />
+              Performance Overview
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              <div className="flex justify-center">
+                <OptimizationGauge
+                  score={latestAnalysis.content_depth_score ?? 0}
+                  label="Depth Score"
+                  description="Coverage vs competitors"
+                  color="text-blue-500"
+                />
+              </div>
+              <div className="flex justify-center">
+                <OptimizationGauge
+                  score={typeof latestAnalysis.competitor_coverage?.semantic_coverage === "number" ? latestAnalysis.competitor_coverage.semantic_coverage : 0}
+                  label="Semantic Coverage"
+                  description="Topic overlap with AI"
+                  color="text-purple-500"
+                />
+              </div>
+            </div>
           </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-sm font-medium text-muted-foreground mb-1">Semantic coverage</p>
-            <p className="text-2xl font-bold text-foreground">
-              {typeof latestAnalysis.competitor_coverage?.semantic_coverage === "number"
-                ? `${latestAnalysis.competitor_coverage.semantic_coverage}%`
-                : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Topic overlap with AI answer (embedding-based)
-            </p>
+
+          {/* Historical Charts & Gap Analysis */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <HistoryChart data={analysisHistory || []} />
+            </div>
+            <div className="lg:col-span-1">
+              <CompetitorGapAnalysis analysis={latestAnalysis} />
+            </div>
           </div>
         </div>
       )}

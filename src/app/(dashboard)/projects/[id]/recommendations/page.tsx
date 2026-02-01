@@ -3,10 +3,11 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, Target, AlertCircle } from "lucide-react";
+import { ArrowLeft, Target, AlertCircle, Sparkles } from "lucide-react";
 import AnalyzeButton from "@/components/projects/AnalyzeButton";
 import RecommendationCard from "@/components/projects/RecommendationCard";
 import Simulator from "@/components/projects/Simulator";
+import OptimizationGauge from "@/components/projects/OptimizationGauge";
 
 interface PageProps {
   params: Promise<{
@@ -108,26 +109,28 @@ export default async function RecommendationsPage({
 
       {/* Analysis scores (depth + semantic coverage) */}
       {latestAnalysis && (
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-sm font-medium text-muted-foreground mb-1">Depth score</p>
-            <p className="text-2xl font-bold text-foreground">
-              {latestAnalysis.content_depth_score ?? "—"}/100
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Length & topic coverage vs competitors
-            </p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <p className="text-sm font-medium text-muted-foreground mb-1">Semantic coverage</p>
-            <p className="text-2xl font-bold text-foreground">
-              {typeof latestAnalysis.competitor_coverage?.semantic_coverage === "number"
-                ? `${latestAnalysis.competitor_coverage.semantic_coverage}%`
-                : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Topic overlap with AI answer (embedding-based)
-            </p>
+        <div className="mb-8 p-6 rounded-2xl border border-white/5 bg-gradient-to-b from-muted/20 to-transparent backdrop-blur-sm">
+          <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-brand-500" />
+            Performance Overview
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="flex justify-center h-full">
+              <OptimizationGauge
+                score={latestAnalysis.content_depth_score ?? 0}
+                label="Depth Score"
+                description="Coverage vs competitors"
+                color="text-blue-500"
+              />
+            </div>
+            <div className="flex justify-center h-full">
+              <OptimizationGauge
+                score={typeof latestAnalysis.competitor_coverage?.semantic_coverage === "number" ? latestAnalysis.competitor_coverage.semantic_coverage : 0}
+                label="Semantic Coverage"
+                description="Topic overlap with AI"
+                color="text-purple-500"
+              />
+            </div>
           </div>
         </div>
       )}
