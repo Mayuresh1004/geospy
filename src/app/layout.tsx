@@ -1,18 +1,18 @@
 import type React from "react";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
 import "@/app/globals.css";
 
-const inter = Inter({
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
@@ -34,7 +34,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${fontSans.variable} ${fontMono.variable}`}
     >
       <body className="font-sans antialiased bg-background text-foreground">
         <Suspense fallback={<div>Loading...</div>}>

@@ -183,7 +183,7 @@ JSON format:
           timestamp: new Date().toISOString(),
         },
       })
-      .select()
+      .select(  )
       .single();
 
     if (error) throw error;

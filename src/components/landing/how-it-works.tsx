@@ -15,10 +15,11 @@ export function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="relative container min-w-full sm:px-36 py-24 md:py-32 bg-muted/50 overflow-hidden"
+      className="relative container min-w-full sm:px-36 py-24 md:py-32 overflow-hidden"
     >
+      <div className="absolute inset-0 bg-muted/20 -z-10"></div>
       <div className="flex flex-col items-center gap-4 text-center mb-16">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-balance">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-balance bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
           How it works
         </h2>
         <p className="max-w-2xl text-lg text-muted-foreground text-balance">
@@ -30,18 +31,18 @@ export function HowItWorks() {
         {steps.slice(0, 3).map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.step} className="border-border/50 bg-background/50 backdrop-blur-sm transition-all hover:shadow-md">
+            <Card key={item.step} className="group hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10 text-brand-500 font-bold group-hover:bg-brand-500 group-hover:text-white transition-colors">
                     {item.step}
                   </div>
-                  <Icon className="h-6 w-6 text-primary" />
+                  <Icon className="h-6 w-6 text-muted-foreground group-hover:text-brand-500 transition-colors" />
                 </div>
                 <h3 className="text-lg font-semibold mt-2">{item.title}</h3>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               </CardContent>
             </Card>
           )
@@ -51,26 +52,26 @@ export function HowItWorks() {
         {steps.slice(3).map((item) => {
           const Icon = item.icon
           return (
-            <Card key={item.step} className="border-border/50 bg-background/50 backdrop-blur-sm transition-all hover:shadow-md">
+            <Card key={item.step} className="group hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10 text-brand-500 font-bold group-hover:bg-brand-500 group-hover:text-white transition-colors">
                     {item.step}
                   </div>
-                  <Icon className="h-6 w-6 text-primary" />
+                  <Icon className="h-6 w-6 text-muted-foreground group-hover:text-brand-500 transition-colors" />
                 </div>
                 <h3 className="text-lg font-semibold mt-2">{item.title}</h3>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
               </CardContent>
             </Card>
           )
         })}
       </div>
 
-      <div className="flex justify-center mt-12">
-        <Button size="lg" asChild>
+      <div className="flex justify-center mt-12 animate-fade-in">
+        <Button size="lg" className="rounded-full shadow-brand-500/25 shadow-md hover:shadow-brand-500/40" variant="premium" asChild>
           <Link href="/signup">
             Get started
             <ArrowRight className="ml-2 h-4 w-4" />
