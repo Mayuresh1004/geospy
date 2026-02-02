@@ -230,7 +230,7 @@ const NAV_UI_TOPIC_BLOCKLIST = new Set([
     'internal links', 'internal links for you', 'related posts', 'related articles', 'you may also like',
     'popular posts', 'recent posts', 'categories for you', 'posts for you', 'related content',
     'cookie policy', 'privacy policy', 'terms of service', 'terms and conditions', 'copyright',
-    'breadcrumb', 'breadcrumbs', 'skip to content', 'main content', 'table of contents',
+    '    ', 'breadcrumbs', 'skip to content', 'main content', 'table of contents',
     'social media', 'follow', 'tweet', 'like us', 'newsletter', 'newsletter signup',
     'advertisement', 'ad', 'sponsored', 'recommended for you', 'trending', 'most read',
 ]);
@@ -299,20 +299,13 @@ async function computeSemanticTopicMatch(
             }
         }
 
-        const topicsMissing: string[] = [];
-        for (let j = 0; j < compSlice.length; j++) {
-            let maxSim = 0;
-            for (let i = 0; i < aiSlice.length; i++) {
-                const sim = cosineSimilarity(compEmbeddings[j], aiEmbeddings[i]);
-                if (sim > maxSim) maxSim = sim;
-            }
-            if (maxSim < SEMANTIC_SIMILARITY_THRESHOLD) {
-                topicsMissing.push(compSlice[j]);
-            }
-        }
+        // Calculate coverage based on AI topics found in competitor content (Recall)
+        const semanticCoverage = aiSlice.length > 0
+            ? Math.round((topicsPresent.length / aiSlice.length) * 100)
+            : 0;
 
-        const covered = compSlice.length - topicsMissing.length;
-        const semanticCoverage = compSlice.length > 0 ? Math.round((covered / compSlice.length) * 100) : 0;
+        // Calculate missing AI topics for consistency
+        const topicsMissing = aiSlice.filter(t => !topicsPresent.includes(t));
 
         return { topicsPresent, topicsMissing, semanticCoverage };
     } catch (err) {
