@@ -7,10 +7,13 @@ interface RouteProps {
   params: Promise<{ id: string }>;
 }
 
+//query enhancer
+
 export async function POST(
   request: NextRequest,
   { params }: RouteProps
 ) {
+
   try {
     const user = await requireAuth();
     const { id: projectId } = await params;
