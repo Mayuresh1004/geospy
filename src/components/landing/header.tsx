@@ -3,21 +3,51 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu, Sparkles } from "lucide-react"
+import { Menu, Sparkles, LogOut } from "lucide-react"
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        setUser(user)
+      } catch (error) {
+        console.error('Error checking user:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    checkUser()
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  const handleLogout = async () => {
+    try {
+      const supabase = getSupabaseBrowserClient()
+      await supabase.auth.signOut()
+      setUser(null)
+      router.push('/')
+    } catch (error) {
+      console.error('Error logging out:', error)
+    }
+  }
 
   return (
     <header
@@ -53,12 +83,28 @@ export function Header() {
         <div className="flex items-center gap-4">
           <ThemeToggle />
           <div className="hidden md:flex items-center gap-2">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button asChild variant="premium">
-              <Link href="/signup">Get Started</Link>
-            </Button>
+            {!loading && user ? (
+              <>
+                <span className="text-sm text-muted-foreground mr-2">
+                  {user.email}
+                </span>
+                <Button asChild variant="ghost">
+                  <Link href="/dashboard">Dashboard</Link>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button asChild variant="premium">
+                  <Link href="/signup">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -80,12 +126,32 @@ export function Header() {
               FAQ
             </Link>
             <div className="flex flex-col gap-3 pt-4 border-t border-border/10">
-              <Button variant="ghost" className="w-full justify-start" asChild>
-                <Link href="/login">Sign in</Link>
-              </Button>
-              <Button className="w-full" variant="premium" asChild>
-                <Link href="/signup">Get Started</Link>
-              </Button>
+              {!loading && user ? (
+                <>
+                  <div className="text-xs text-muted-foreground px-2 py-2 bg-muted rounded">
+                    {user.email}
+                  </div>
+                  <Button className="w-full justify-start" asChild>
+                    <Link href="/dashboard">Dashboard</Link>
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => {
+                    setMobileMenuOpen(false)
+                    handleLogout()
+                  }}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" className="w-full justify-start" asChild>
+                    <Link href="/login">Sign in</Link>
+                  </Button>
+                  <Button className="w-full" variant="premium" asChild>
+                    <Link href="/signup">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>
