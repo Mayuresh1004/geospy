@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles, AlertTriangle, CheckCircle2 } from "lucide-react";
-import Badge from "@/components/ui/Badge";
+import Badge from "@/components/ui/badge";
 
 interface AnalysisResult {
     topics_missing: string[];

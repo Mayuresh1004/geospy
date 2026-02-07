@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Calendar, Target } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface ProjectCardProps {

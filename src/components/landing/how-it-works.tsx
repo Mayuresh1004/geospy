@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, FileInput, Scissors, MessageSquare, GitCompare, Target } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/Card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const steps = [
   { step: 1, icon: FileInput, title: "Add your URLs & topics", description: "Create a project with your website URLs and target topics or questions." },

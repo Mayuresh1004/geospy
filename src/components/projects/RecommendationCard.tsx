@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { CheckCircle2, ChevronDown, ChevronUp, AlertTriangle, Info, Loader2, Sparkles, Copy } from "lucide-react";
-import Badge from "@/components/ui/Badge";
+import Badge from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface RecommendationCardProps {
