@@ -6,7 +6,7 @@ import {
   GitCompare,
   Target,
 } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const features = [
   {
@@ -65,10 +65,10 @@ export function Features() {
       id="features"
       className="container min-w-full sm:px-36 py-24 md:py-32 relative overflow-hidden"
     >
-      <div className="absolute top-1/2 left-0 -z-10 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[100px] -translate-y-1/2"></div>
+      <div className="absolute top-1/2 left-0 -z-10 w-125 h-125 bg-brand-500/5 rounded-full blur-[100px] -translate-y-1/2"></div>
 
       <div className="flex flex-col items-center gap-4 text-center mb-16">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-balance bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl text-balance bg-clip-text text-transparent bg-linear-to-b from-foreground to-foreground/70">
           Everything you need for GEO
         </h2>
         <p className="max-w-2xl text-lg text-muted-foreground text-balance">

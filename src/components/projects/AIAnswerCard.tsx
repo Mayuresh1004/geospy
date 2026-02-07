@@ -114,7 +114,7 @@ export default function AIAnswerCard({ answer }: AIAnswerCardProps) {
   return (
     <div className="rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm shadow-sm transition-all hover:border-brand-500/30">
       {/* Header */}
-      <div className="p-6 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
+      <div className="p-6 border-b border-white/5 bg-linear-to-b from-white/5 to-transparent">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
