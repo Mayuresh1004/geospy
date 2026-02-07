@@ -99,12 +99,12 @@ export default function ExportReportButton({ project, analysis }: ExportReportBu
             const missing = analysis.topics_missing.slice(0, 10);
             const weak = analysis.topics_weak.slice(0, 10);
 
-            const tableData = [];
-            if (missing.length) tableData.push([{ content: "Missing Topics (Critical)", colSpan: 1, styles: { fontStyle: 'bold', fillColor: [255, 230, 230] } }]);
+            const tableData: any[] = [];
+            if (missing.length) tableData.push([{ content: "Missing Topics (Critical)", colSpan: 1, styles: { fontStyle: 'bold' as const, fillColor: [255, 230, 230] as any } }]);
             missing.forEach(t => tableData.push([`• ${t}`]));
 
             if (weak.length) {
-                tableData.push([{ content: "Weak Coverage (Improvement Needed)", colSpan: 1, styles: { fontStyle: 'bold', fillColor: [255, 250, 230] } }]);
+                tableData.push([{ content: "Weak Coverage (Improvement Needed)", colSpan: 1, styles: { fontStyle: 'bold' as const, fillColor: [255, 250, 230] as any } }]);
                 weak.forEach(t => tableData.push([`• ${t}`]));
             }
 
@@ -115,7 +115,7 @@ export default function ExportReportButton({ project, analysis }: ExportReportBu
             autoTable(doc, {
                 startY: 160,
                 head: [['Topic Analysis']],
-                body: tableData,
+                body: tableData as any,
                 theme: 'grid',
                 headStyles: { fillColor: [50, 50, 50] },
             });

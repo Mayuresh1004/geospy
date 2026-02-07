@@ -126,11 +126,11 @@ export async function POST(
         if (targetTopics.length === 0) {
             topicsMissing = aiTopics;
         } else {
-            topicsMissing = aiTopics.filter(t => !isTopicInList(t, targetTopics));
-            topicsPresent = aiTopics.filter(t => isTopicInList(t, targetTopics));
+            topicsMissing = aiTopics.filter((t: string) => !isTopicInList(t, targetTopics));
+            topicsPresent = aiTopics.filter((t: string) => isTopicInList(t, targetTopics));
         }
 
-        const commonCompetitorTopics = competitorTopics.filter(t => !isTopicInList(t, targetTopics)).slice(0, 5);
+        const commonCompetitorTopics = competitorTopics.filter((t: string) => !isTopicInList(t, targetTopics)).slice(0, 5);
         competitiveGaps = commonCompetitorTopics;
 
         const topicsWeak = computeTopicsWeak(targets, topicsPresent);
