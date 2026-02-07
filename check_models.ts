@@ -20,7 +20,8 @@ async function listModels() {
 
     } catch (error) {
         console.error('Network error:', error);
-        fs.writeFileSync('models_log.txt', 'Error: ' + error.toString());
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        fs.writeFileSync('models_log.txt', 'Error: ' + errorMessage);
     }
 }
 
