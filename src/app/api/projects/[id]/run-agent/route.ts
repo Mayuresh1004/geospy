@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
+import { createInitialGEOAgentState } from "@/lib/agents/types";
 
 export const runtime = "nodejs";
 
@@ -75,8 +76,12 @@ async function runAgentSse(request: NextRequest, projectId: string) {
           const { createGeoAgentGraph } = await import("@/lib/agents/geoAgent");
 
           const graph = createGeoAgentGraph();
+          const initialState = createInitialGEOAgentState({
+            projectId,
+            userId: user.id,
+          });
           const finalState = await graph.invoke(
-            { projectId, userId: user.id },
+            initialState as unknown as Parameters<typeof graph.invoke>[0],
             {
               configurable: {
                 onLog: (line: string) => {
