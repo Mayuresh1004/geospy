@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     })) ?? [];
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -65,22 +65,24 @@ export default async function DashboardPage() {
       {projects && projects.length > 0 ? (
         <ProjectsList projects={projectsWithScores} />
       ) : (
-        <div className="w-full max-w-2xl mx-auto text-center py-12 bg-card rounded-lg border border-border">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <FolderKanban className="w-8 h-8 text-muted-foreground" />
+        <div className="w-full min-h-[55vh] bg-card rounded-lg border border-border p-8 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+              <FolderKanban className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              No projects yet
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Create your first GEO project to get started
+            </p>
+            <Link href="/projects/new">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Project
+              </Button>
+            </Link>
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            No projects yet
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            Create your first GEO project to get started
-          </p>
-          <Link href="/projects/new">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Project
-            </Button>
-          </Link>
         </div>
       )}
     </div>
