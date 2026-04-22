@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     })) ?? [];
 
   return (
-    <div>
+    <div className="w-full max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
       {projects && projects.length > 0 ? (
         <ProjectsList projects={projectsWithScores} />
       ) : (
-        <div className="text-center py-12 bg-card rounded-lg border border-border">
+        <div className="w-full max-w-2xl mx-auto text-center py-12 bg-card rounded-lg border border-border">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
             <FolderKanban className="w-8 h-8 text-muted-foreground" />
           </div>
