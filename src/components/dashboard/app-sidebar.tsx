@@ -3,12 +3,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  Settings,
-  CreditCard,
-  CheckSquare,
+  PlusCircle,
+  BarChart3,
   LogOut,
   ChevronUp,
-  User2,
 } from "lucide-react";
 
 import {
@@ -43,19 +41,14 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Todos",
-    url: "/dashboard/todos",
-    icon: CheckSquare,
+    title: "New Project",
+    url: "/projects/new",
+    icon: PlusCircle,
   },
   {
-    title: "Billing",
-    url: "/dashboard/billing",
-    icon: CreditCard,
-  },
-  {
-    title: "Settings",
-    url: "/dashboard/settings",
-    icon: Settings,
+    title: "Health Check",
+    url: "/test",
+    icon: BarChart3,
   },
 ];
 
@@ -163,15 +156,9 @@ export function AppSidebar() {
                 sideOffset={4}
               >
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings" className="cursor-pointer">
-                    <User2 className="mr-2 h-4 w-4" />
-                    Account Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/billing" className="cursor-pointer">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Billing
+                  <Link href="/dashboard" className="cursor-pointer">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

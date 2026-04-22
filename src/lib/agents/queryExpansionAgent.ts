@@ -1,19 +1,22 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
 export async function expandQueries(topic: string): Promise<string[]> {
+  const budgetMode = process.env.GEMINI_BUDGET_MODE !== "0";
+  const maxQueries = budgetMode ? 2 : 5;
   const baseTopic = (topic ?? "").trim();
+  const topicForTemplate = normalizeTopicForTemplate(baseTopic);
   const baseQuestion = baseTopic.endsWith("?") ? baseTopic : `What is ${baseTopic}?`;
 
   const templated: string[] = [
     baseQuestion,
-    `Best ${baseTopic} for beginners`,
-    `How to choose ${baseTopic}`,
-    `What makes a good ${baseTopic}`,
-    `${baseTopic} comparison guide`,
+    `Best ${topicForTemplate} for beginners`,
+    `How to choose ${topicForTemplate}`,
+    `What makes a good ${topicForTemplate}`,
+    `${topicForTemplate} comparison guide`,
   ].map((q) => q.trim()).filter(Boolean);
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return unique(templated).slice(0, 5);
+  if (!apiKey || budgetMode) return unique(templated).slice(0, maxQueries);
 
   const model = new ChatGoogleGenerativeAI({
     apiKey,
@@ -31,7 +34,7 @@ Make them diverse: how-to, comparison, beginner, expert angles.`;
     .then((t) => parseQueriesJson(t))
     .catch(() => []);
 
-  return unique([...templated, ...extra]).slice(0, 5);
+  return unique([...templated, ...extra]).slice(0, maxQueries);
 }
 
 function parseQueriesJson(raw: string): string[] {
@@ -59,5 +62,31 @@ function unique(items: string[]): string[] {
     out.push(i);
   }
   return out;
+}
+
+function normalizeTopicForTemplate(topic: string): string {
+  const cleaned = topic.trim().replace(/[?!.]+$/g, "");
+  const lower = cleaned.toLowerCase();
+
+  const prefixes = [
+    "which is the best ",
+    "what is the best ",
+    "what are the best ",
+    "which are the best ",
+    "what is ",
+    "what are ",
+    "which is ",
+    "which are ",
+    "how to ",
+  ];
+
+  for (const prefix of prefixes) {
+    if (lower.startsWith(prefix)) {
+      const sliced = cleaned.slice(prefix.length).trim();
+      if (sliced.length > 2) return sliced;
+    }
+  }
+
+  return cleaned;
 }
 

@@ -62,7 +62,8 @@ export async function analyzeProject(input: {
       .select("*")
       .in("url_id", competitorUrlIds)
       .eq("status", "success");
-    competitors = (scrapedData as unknown as ScrapedContentRow[]) || [];
+    const competitorRows = (scrapedData as unknown as ScrapedContentRow[]) || [];
+    competitors = dedupeScrapesByUrlId(competitorRows);
   }
 
   let targets: ScrapedContentRow[] = [];
@@ -72,7 +73,8 @@ export async function analyzeProject(input: {
       .select("*")
       .in("url_id", targetUrlIds)
       .eq("status", "success");
-    targets = (targetData as unknown as ScrapedContentRow[]) || [];
+    const targetRows = (targetData as unknown as ScrapedContentRow[]) || [];
+    targets = dedupeScrapesByUrlId(targetRows);
   }
 
   const aiAnswerRow = aiAnswer as unknown as AIAnswerRow;
@@ -81,6 +83,7 @@ export async function analyzeProject(input: {
   const targetTopics = extractAllTopics(targets);
 
   const apiKey = process.env.GEMINI_API_KEY;
+  const geminiBudgetMode = process.env.GEMINI_BUDGET_MODE !== "0";
 
   let semanticCoverage = 0;
   let topicsMissing: string[] = [];
@@ -98,7 +101,7 @@ export async function analyzeProject(input: {
     const coveredByComps = aiTopics.filter((t: string) => isTopicInList(t, competitorTopics));
     semanticCoverage = Math.round((coveredByComps.length / (aiTopics.length || 1)) * 100);
 
-    if (apiKey) {
+    if (apiKey && !geminiBudgetMode) {
       try {
         const semanticResult = await computeSemanticTopicMatch(aiTopics, competitorTopics, apiKey);
         if (semanticResult) {
@@ -177,6 +180,7 @@ type AIAnswerRow = {
 };
 
 type ScrapedContentRow = {
+  url_id?: string | null;
   h2_headings?: string[] | null;
   h3_headings?: string[] | null;
   word_count?: number | null;
@@ -184,6 +188,37 @@ type ScrapedContentRow = {
   content?: string | null;
   clean_text?: string | null;
 };
+
+function dedupeScrapesByUrlId(rows: ScrapedContentRow[]): ScrapedContentRow[] {
+  const byUrlId = new Map<string, ScrapedContentRow>();
+
+  for (const row of rows) {
+    const key = String(row.url_id ?? "").trim();
+    if (!key) continue;
+
+    const prev = byUrlId.get(key);
+    if (!prev) {
+      byUrlId.set(key, row);
+      continue;
+    }
+
+    // Prefer the row that appears richer for scoring (more words/headings).
+    const prevScore =
+      Number(prev.word_count ?? 0) +
+      (Array.isArray(prev.h2_headings) ? prev.h2_headings.length * 20 : 0) +
+      (Array.isArray(prev.h3_headings) ? prev.h3_headings.length * 10 : 0);
+    const nextScore =
+      Number(row.word_count ?? 0) +
+      (Array.isArray(row.h2_headings) ? row.h2_headings.length * 20 : 0) +
+      (Array.isArray(row.h3_headings) ? row.h3_headings.length * 10 : 0);
+
+    if (nextScore >= prevScore) {
+      byUrlId.set(key, row);
+    }
+  }
+
+  return Array.from(byUrlId.values());
+}
 
 export type AnalysisRow = {
   id: string;
@@ -402,20 +437,62 @@ function analyzeStructuralPatterns(aiAnswer: AIAnswerRow, competitors: ScrapedCo
 
 function calculateDepthScore(targets: ScrapedContentRow[], competitors: ScrapedContentRow[]): number {
   if (targets.length === 0) return 0;
-  const targetWordCount = targets.reduce((sum, t) => sum + (t.word_count || 0), 0);
-  const targetTopicsCount = targets.reduce((sum, t) => sum + (t.h2_headings?.length || 0) + (t.h3_headings?.length || 0), 0);
+  const targetWordMedian = median(targets.map((t) => Number(t.word_count ?? 0)));
+  const targetHeadingMedian = median(targets.map(countQualityHeadings));
 
   if (competitors.length === 0) {
-    return Math.min((targetWordCount / 1000) * 50, 50) + Math.min((targetTopicsCount / 5) * 50, 50);
+    const wordScore = Math.min(70, (targetWordMedian / 2500) * 70);
+    const headingScore = Math.min(30, (targetHeadingMedian / 10) * 30);
+    return Math.round(wordScore + headingScore);
   }
 
-  const avgCompWords = competitors.reduce((sum, c) => sum + (c.word_count || 0), 0) / competitors.length;
-  const avgCompTopics =
-    competitors.reduce((sum, c) => sum + (c.h2_headings?.length || 0) + (c.h3_headings?.length || 0), 0) / competitors.length;
+  const compWordMedian = median(competitors.map((c) => Number(c.word_count ?? 0)));
+  const compHeadingMedian = median(competitors.map(countQualityHeadings));
 
-  const wordScore = Math.min((targetWordCount / (avgCompWords || 1)) * 50, 50);
-  const topicScore = Math.min((targetTopicsCount / (avgCompTopics || 1)) * 50, 50);
-  return Math.round(wordScore + topicScore);
+  const wordRatio = targetWordMedian / Math.max(compWordMedian, 1);
+  const headingRatio = targetHeadingMedian / Math.max(compHeadingMedian, 1);
+
+  const wordScore = ratioToScore(wordRatio, 70);
+  const headingScore = ratioToScore(headingRatio, 30);
+  return Math.round(wordScore + headingScore);
+}
+
+function countQualityHeadings(row: ScrapedContentRow): number {
+  const headings = [
+    ...(Array.isArray(row.h2_headings) ? row.h2_headings : []),
+    ...(Array.isArray(row.h3_headings) ? row.h3_headings : []),
+  ]
+    .map((h) => String(h ?? "").toLowerCase().trim())
+    .filter(Boolean);
+
+  const lowSignalPatterns = [
+    /\bfaq\b/,
+    /\bfrequently asked\b/,
+    /\brelated stories?\b/,
+    /\bphoto gallery\b/,
+    /\bconclusion\b/,
+    /\bcomments?\b/,
+    /\bshare\b/,
+  ];
+
+  return headings.filter((h) => !lowSignalPatterns.some((re) => re.test(h))).length;
+}
+
+function ratioToScore(ratio: number, maxScore: number): number {
+  if (!Number.isFinite(ratio) || ratio <= 0) return 0;
+  if (ratio >= 1.2) return maxScore;
+  if (ratio >= 1.0) return maxScore * 0.85;
+  if (ratio >= 0.8) return maxScore * 0.65;
+  if (ratio >= 0.6) return maxScore * 0.45;
+  return Math.max(0, Math.min(maxScore, ratio * maxScore * 0.75));
+}
+
+function median(values: number[]): number {
+  const nums = values.filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  if (nums.length === 0) return 0;
+  const mid = Math.floor(nums.length / 2);
+  if (nums.length % 2 === 0) return (nums[mid - 1] + nums[mid]) / 2;
+  return nums[mid];
 }
 
 type RecommendationInsert = {
@@ -440,6 +517,7 @@ async function generateRecommendations(
     { contentPillars: Array<{ heading: string; estimatedWordCount: number }> }
   >
 ): Promise<RecommendationInsert[]> {
+  const geminiBudgetMode = process.env.GEMINI_BUDGET_MODE !== "0";
   const recommendations: RecommendationInsert[] = [];
 
   const missingTopics = Array.isArray(analysis.topics_missing)
@@ -463,19 +541,21 @@ Limit to 2-3 action items.
 `;
 
     let aiRec: { description?: string; action_items?: unknown[] } | null = null;
-    try {
-      const text = await generateText(prompt);
-      const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(jsonStr) as unknown;
-      if (parsed && typeof parsed === "object") {
-        const obj = parsed as Record<string, unknown>;
-        aiRec = {
-          description: typeof obj.description === "string" ? obj.description : undefined,
-          action_items: Array.isArray(obj.action_items) ? obj.action_items : undefined,
-        };
+    if (!geminiBudgetMode) {
+      try {
+        const text = await generateText(prompt);
+        const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        const parsed = JSON.parse(jsonStr) as unknown;
+        if (parsed && typeof parsed === "object") {
+          const obj = parsed as Record<string, unknown>;
+          aiRec = {
+            description: typeof obj.description === "string" ? obj.description : undefined,
+            action_items: Array.isArray(obj.action_items) ? obj.action_items : undefined,
+          };
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     recommendations.push({
@@ -510,19 +590,21 @@ Limit to 2 action items.
 `;
 
     let aiRec: { description?: string; action_items?: unknown[] } | null = null;
-    try {
-      const text = await generateText(prompt);
-      const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(jsonStr) as unknown;
-      if (parsed && typeof parsed === "object") {
-        const obj = parsed as Record<string, unknown>;
-        aiRec = {
-          description: typeof obj.description === "string" ? obj.description : undefined,
-          action_items: Array.isArray(obj.action_items) ? obj.action_items : undefined,
-        };
+    if (!geminiBudgetMode) {
+      try {
+        const text = await generateText(prompt);
+        const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        const parsed = JSON.parse(jsonStr) as unknown;
+        if (parsed && typeof parsed === "object") {
+          const obj = parsed as Record<string, unknown>;
+          aiRec = {
+            description: typeof obj.description === "string" ? obj.description : undefined,
+            action_items: Array.isArray(obj.action_items) ? obj.action_items : undefined,
+          };
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     recommendations.push({
@@ -629,16 +711,18 @@ Limit to 2 action items.
       .select("id, title, description, action_items, priority");
     if (error) throw error;
 
-    await runImprovementAgent({
-      projectId,
-      recommendations: (inserted ?? []).map((r) => ({
-        id: String(r.id),
-        title: String(r.title ?? ""),
-        description: String(r.description ?? ""),
-        action_items: Array.isArray(r.action_items) ? r.action_items : [],
-        priority: String(r.priority ?? ""),
-      })),
-    });
+    if (!geminiBudgetMode) {
+      await runImprovementAgent({
+        projectId,
+        recommendations: (inserted ?? []).map((r) => ({
+          id: String(r.id),
+          title: String(r.title ?? ""),
+          description: String(r.description ?? ""),
+          action_items: Array.isArray(r.action_items) ? r.action_items : [],
+          priority: String(r.priority ?? ""),
+        })),
+      });
+    }
   }
 
   return recommendations;

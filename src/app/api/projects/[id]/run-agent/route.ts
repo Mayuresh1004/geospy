@@ -21,6 +21,23 @@ function encodeSse(data: unknown) {
   return `data: ${JSON.stringify(data)}\n\n`;
 }
 
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const maybeMessage = (error as { message?: unknown }).message;
+    if (typeof maybeMessage === "string" && maybeMessage.trim()) {
+      return maybeMessage;
+    }
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return "Unknown error";
+    }
+  }
+  return "Unknown error";
+}
+
 async function runAgentSse(request: NextRequest, projectId: string) {
   const user = await requireAuth();
   const runStartedAtMs = Date.now();
@@ -85,10 +102,12 @@ async function runAgentSse(request: NextRequest, projectId: string) {
             send({ step: "complete", progress: 100, summary: finalState });
           }
         } catch (e) {
+          const errorMessage = toErrorMessage(e);
+          console.error("[run-agent] workflow failed:", e);
           send({
             step: "failed",
             progress: 100,
-            error: e instanceof Error ? e.message : "Unknown error",
+            error: errorMessage,
           });
         } finally {
           close();

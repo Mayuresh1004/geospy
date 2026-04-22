@@ -1,5 +1,3 @@
-"use server";
-
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import type { GEOAgentState } from "@/lib/agents/types";
 import { fetchProjectDataNode } from "@/lib/agents/nodes/fetchProjectDataNode";

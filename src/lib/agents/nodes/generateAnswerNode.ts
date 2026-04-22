@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import type { GEOAgentState } from "@/lib/agents/types";
 import { expandQueries } from "@/lib/agents/queryExpansionAgent";
+import pLimit from "p-limit";
 
 export async function generateAnswerNode(
   state: GEOAgentState,
@@ -12,6 +13,7 @@ export async function generateAnswerNode(
     };
   }
 ): Promise<Partial<GEOAgentState>> {
+  const budgetMode = process.env.GEMINI_BUDGET_MODE !== "0";
   config?.configurable?.onLog?.("Generating AI answers...");
   config?.configurable?.onEvent?.({
     step: "generating",
@@ -32,8 +34,11 @@ export async function generateAnswerNode(
 
   config?.configurable?.onLog?.(`Answer queries: ${queries.join(" | ")}`);
 
+  const limit = pLimit(budgetMode ? 1 : 2);
   const settled = await Promise.allSettled(
-    queries.map(async (query) => generateSingleAnswer(model, query, state.projectId))
+    queries.map(async (query) =>
+      limit(() => generateSingleAnswer(model, query, state.projectId))
+    )
   );
 
   const results = settled
@@ -90,7 +95,7 @@ JSON format:
 }
 `.trim();
 
-    const raw = await model.invoke(prompt);
+    const raw = await invokeWithRetry(() => model.invoke(prompt));
     const rawText = typeof raw.content === "string" ? raw.content : "";
     const cleaned = rawText
       .replace(/```json/gi, "")
@@ -137,7 +142,7 @@ JSON format:
     return {
       status: "failed",
       query,
-      error: e instanceof Error ? e.message : "Unknown error",
+      error: summarizeGeminiError(e),
     };
   }
 }
@@ -147,5 +152,69 @@ function classifyAnswerFormat(answer: string): string {
   if (/^[\*\-•]/m.test(answer)) return "bullet_list";
   if (answer.length < 200) return "definition";
   return "paragraph";
+}
+
+async function invokeWithRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const maxAttempts = 3;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!shouldRetryGeminiError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+
+      const waitMs = computeRetryDelayMs(error, attempt);
+      await sleep(waitMs);
+    }
+  }
+
+  throw lastError ?? new Error("Failed to invoke Gemini model");
+}
+
+function shouldRetryGeminiError(error: unknown): boolean {
+  const message = summarizeGeminiError(error).toLowerCase();
+
+  if (message.includes("quota exceeded") || message.includes("free_tier_requests")) {
+    return false;
+  }
+
+  return (
+    message.includes("503") ||
+    message.includes("service unavailable") ||
+    message.includes("high demand") ||
+    message.includes("429")
+  );
+}
+
+function computeRetryDelayMs(error: unknown, attempt: number): number {
+  const message = summarizeGeminiError(error);
+  const retryInfoMatch = message.match(/retry in\s+([0-9]+(?:\.[0-9]+)?)s/i);
+  if (retryInfoMatch) {
+    const seconds = Number(retryInfoMatch[1]);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      return Math.ceil(seconds * 1000);
+    }
+  }
+
+  const base = 1000;
+  return base * Math.pow(2, attempt - 1);
+}
+
+function summarizeGeminiError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "Unknown error";
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

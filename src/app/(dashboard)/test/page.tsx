@@ -24,6 +24,9 @@ export default function TestPage() {
         }),
       });
       const project = await projectRes.json();
+      if (!projectRes.ok || !project?.project?.id) {
+        throw new Error(project?.error ?? "Failed to create project");
+      }
       console.log("✅ Project created:", project);
 
       // 2. Scrape
@@ -32,6 +35,9 @@ export default function TestPage() {
         method: "POST",
       });
       const scrapeData = await scrapeRes.json();
+      if (!scrapeRes.ok) {
+        throw new Error(scrapeData?.error ?? "Failed to scrape project URLs");
+      }
       console.log("✅ Scraped:", scrapeData);
 
       // 3. Generate answer
@@ -47,7 +53,25 @@ export default function TestPage() {
         }
       );
       const answerData = await answerRes.json();
+      if (!answerRes.ok) {
+        throw new Error(answerData?.error ?? "Failed to generate answers");
+      }
       console.log("✅ Answer generated:", answerData);
+
+      const successfulAnswer = (answerData?.results ?? []).find(
+        (r: any) => r?.status === "success" && r?.answer?.id
+      );
+      if (!successfulAnswer?.answer?.id) {
+        const failedReasons = (answerData?.results ?? [])
+          .filter((r: any) => r?.status === "failed")
+          .map((r: any) => `${r?.query ?? "query"}: ${r?.error ?? "Unknown error"}`)
+          .join(" | ");
+        throw new Error(
+          failedReasons
+            ? `No successful AI answer generated. ${failedReasons}`
+            : "No successful AI answer generated."
+        );
+      }
 
       // 4. Analyze
       console.log("Analyzing...");
@@ -55,10 +79,17 @@ export default function TestPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ai_answer_id: answerData.results[0].answer.id,
+          ai_answer_id: successfulAnswer.answer.id,
         }),
       });
       const analyzeData = await analyzeRes.json();
+      if (!analyzeRes.ok) {
+        throw new Error(
+          analyzeData?.details ??
+            analyzeData?.error ??
+            "Failed to analyze generated answer"
+        );
+      }
       console.log("✅ Analysis complete:", analyzeData);
 
       setResult({
