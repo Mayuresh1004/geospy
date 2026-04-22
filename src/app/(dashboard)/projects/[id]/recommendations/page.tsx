@@ -8,6 +8,7 @@ import AnalyzeButton from "@/components/projects/AnalyzeButton";
 import RecommendationCard from "@/components/projects/RecommendationCard";
 import Simulator from "@/components/projects/Simulator";
 import OptimizationGauge from "@/components/projects/OptimizationGauge";
+import QuickWins from "@/components/projects/QuickWins";
 
 interface PageProps {
   params: Promise<{
@@ -78,6 +79,10 @@ export default async function RecommendationsPage({
     recommendations?.filter((r) => r.priority === "medium") ?? [];
   const lowPriority =
     recommendations?.filter((r) => r.priority === "low") ?? [];
+
+  const completedCount =
+    recommendations?.filter((r) => r.is_completed === true).length ?? 0;
+  const totalCount = recommendations?.length ?? 0;
 
   return (
     <div>
@@ -182,6 +187,27 @@ export default async function RecommendationsPage({
       {/* Recommendations */}
       {recommendations && recommendations.length > 0 ? (
         <div className="space-y-8">
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-foreground">
+                Completion: {completedCount}/{totalCount}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {totalCount ? Math.round((completedCount / totalCount) * 100) : 0}%
+              </p>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{
+                  width: `${totalCount ? (completedCount / totalCount) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <QuickWins recommendations={recommendations} />
+
           {/* Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-card border border-destructive/30 rounded-lg p-4">

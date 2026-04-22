@@ -2,13 +2,16 @@
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
-import ProjectProgress from "@/components/projects/ProjectProgress";
+import AgentRunner from "@/components/projects/AgentRunner";
 import DeleteProjectButton from "@/components/projects/DeleteProjectButton";
 import OptimizationGauge from "@/components/projects/OptimizationGauge";
 import HistoryChart from "@/components/projects/HistoryChart";
 import AnalyzeButton from "@/components/projects/AnalyzeButton";
 import CompetitorGapAnalysis from "@/components/projects/CompetitorGapAnalysis";
 import ExportReportButton from "@/components/projects/ExportReportButton";
+import AgentRunRealtime from "@/components/projects/AgentRunRealtime";
+import AgentRunHistory from "@/components/projects/AgentRunHistory";
+import type { AgentRunRow } from "@/lib/agents/agentRunTypes";
 import Link from "next/link";
 import { ArrowRight, Sparkles, Target } from "lucide-react";
 import React from "react";
@@ -50,23 +53,6 @@ export default async function ProjectPage({ params }: PageProps) {
   const urlIds = (urls ?? []).map((u) => u.id);
 
   // =========================
-  // Scraped content count
-  // =========================
-  const { count: scrapedCount } = await db
-    .from("scraped_content")
-    .select("*", { count: "exact", head: true })
-    .in("url_id", urlIds)
-    .eq("status", "success");
-
-  // =========================
-  // AI answers count
-  // =========================
-  const { count: answersCount } = await db
-    .from("ai_answers")
-    .select("*", { count: "exact", head: true })
-    .eq("project_id", id);
-
-  // =========================
   // Recommendations count
   // =========================
   const { count: recommendationsCount } = await db
@@ -88,6 +74,17 @@ export default async function ProjectPage({ params }: PageProps) {
   const targetUrls = urls?.filter((u) => u.type === "target") ?? [];
   const competitorUrls = urls?.filter((u) => u.type === "competitor") ?? [];
 
+  const { data: agentRuns } = await db
+    .from("agent_runs")
+    .select("*")
+    .eq("project_id", id)
+    .eq("user_id", user.id)
+    .order("started_at", { ascending: false })
+    .limit(5);
+
+  const agentRunsTyped = (agentRuns ?? []) as unknown as AgentRunRow[];
+  const latestRun = agentRunsTyped[0] ?? null;
+
   return (
     <div>
       {/* Header */}
@@ -96,6 +93,14 @@ export default async function ProjectPage({ params }: PageProps) {
           <h1 className="text-3xl font-bold text-foreground">
             {project.name}
           </h1>
+          {latestRun?.completed_at ? (
+            <p className="text-sm text-muted-foreground mt-2">
+              Last agent run: {new Date(latestRun.completed_at).toLocaleString()}
+              {typeof latestRun.duration_ms === "number"
+                ? ` · ${Math.round(latestRun.duration_ms / 1000)}s`
+                : ""}
+            </p>
+          ) : null}
           {project.description && (
             <p className="text-muted-foreground mt-2">
               {project.description}
@@ -130,19 +135,15 @@ export default async function ProjectPage({ params }: PageProps) {
         </div>
       </div>
 
+      <AgentRunRealtime projectId={id} initialLatestRun={latestRun} />
+
       {/* Progress */}
-      <ProjectProgress
-        projectId={id}
-        urlsCount={urls?.length ?? 0}
-        scrapedCount={scrapedCount ?? 0}
-        answersCount={answersCount ?? 0}
-        recommendationsCount={recommendationsCount ?? 0}
-      />
+      <AgentRunner projectId={id} />
 
       {/* Analysis scores (depth + semantic coverage) */}
       {latestAnalysis && (
         <div className="mb-8 space-y-8">
-          <div className="p-6 rounded-2xl border border-border/50 bg-gradient-to-b from-muted/20 to-transparent">
+          <div className="p-6 rounded-2xl border border-border/50 bg-linear-to-b from-muted/20 to-transparent">
             <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-brand-500" />
               Performance Overview
@@ -163,6 +164,34 @@ export default async function ProjectPage({ params }: PageProps) {
                   description="Topic overlap with AI"
                   color="text-purple-500"
                 />
+              </div>
+              <div className="flex justify-center">
+                <OptimizationGauge
+                  score={typeof latestAnalysis.geo_score_breakdown?.structuralClarity === "number" ? latestAnalysis.geo_score_breakdown.structuralClarity * 4 : 0}
+                  label="Structure"
+                  description="Clarity & hierarchy"
+                  color="text-emerald-500"
+                />
+              </div>
+              <div className="flex justify-center">
+                <OptimizationGauge
+                  score={typeof latestAnalysis.geo_score_breakdown?.citationPotential === "number" ? latestAnalysis.geo_score_breakdown.citationPotential * 4 : 0}
+                  label="Citation"
+                  description="Quote-ability signals"
+                  color="text-amber-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center">
+              <div className="rounded-full border border-border bg-muted/20 px-4 py-2 text-sm">
+                <span className="text-muted-foreground">GEO Score</span>{" "}
+                <span className="font-semibold text-foreground">
+                  {typeof latestAnalysis.geo_score_breakdown?.total === "number"
+                    ? latestAnalysis.geo_score_breakdown.total
+                    : 0}
+                  /100
+                </span>
               </div>
             </div>
           </div>
@@ -268,6 +297,8 @@ export default async function ProjectPage({ params }: PageProps) {
           </div>
         </Link>
       </div>
+
+      <AgentRunHistory runs={agentRunsTyped} />
     </div>
   );
 }

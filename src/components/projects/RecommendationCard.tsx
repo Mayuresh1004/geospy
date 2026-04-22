@@ -2,9 +2,12 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ChevronDown, ChevronUp, AlertTriangle, Info, Loader2, Sparkles, Copy } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, AlertTriangle, Info, Loader2, Sparkles, Copy, ExternalLink, Star } from "lucide-react";
 import Badge from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import MarkdownPreview from "@/components/projects/MarkdownPreview";
 
 interface RecommendationCardProps {
   recommendation: {
@@ -20,17 +23,21 @@ interface RecommendationCardProps {
       format: string;
     }>;
     expected_impact: string;
+    is_completed?: boolean | null;
+    quality_score?: number | null;
   };
 }
 
 export default function RecommendationCard({
   recommendation,
 }: RecommendationCardProps) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
   const [showDraft, setShowDraft] = useState(false);
   const [draftContent, setDraftContent] = useState("");
   const [hasCopied, setHasCopied] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
 
   const handleDraft = async () => {
     setIsDrafting(true);
@@ -56,6 +63,42 @@ export default function RecommendationCard({
     navigator.clipboard.writeText(draftContent);
     setHasCopied(true);
     setTimeout(() => setHasCopied(false), 2000);
+  };
+
+  const [previewMode, setPreviewMode] = useState<"rendered" | "raw">("rendered");
+
+  const openInNewTab = () => {
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Draft Preview</title></head><body><pre>${escapeHtml(
+      draftContent
+    )}</pre></body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener,noreferrer");
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  };
+
+  const toggleComplete = async () => {
+    setIsToggling(true);
+    try {
+      const next = !recommendation.is_completed;
+      const res = await fetch(
+        `/api/recommendations/${recommendation.id}/toggle-complete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_completed: next }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? "Failed to update recommendation");
+      }
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   const priorityConfig = {
@@ -102,13 +145,31 @@ export default function RecommendationCard({
                 {recommendation.title}
               </h3>
             </div>
-            <p className="text-muted-foreground mb-4 leading-relaxed">{recommendation.description}</p>
+            <p
+              className={cn(
+                "text-muted-foreground mb-4 leading-relaxed",
+                recommendation.is_completed ? "line-through opacity-70" : ""
+              )}
+            >
+              {recommendation.description}
+            </p>
 
             <div className="flex gap-2">
               <Badge color={config.badgeColor}>{config.label}</Badge>
               <Badge variant="secondary" className="bg-background/50 border-white/10 text-foreground/80">
                 {recommendation.category.replace(/_/g, " ")}
               </Badge>
+              {recommendation.is_completed ? (
+                <Badge variant="secondary" className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600">
+                  Done
+                </Badge>
+              ) : null}
+              {typeof recommendation.quality_score === "number" ? (
+                <Badge variant="secondary" className="bg-amber-500/10 border-amber-500/20 text-amber-600">
+                  <Star className="w-3 h-3 mr-1 fill-current" />
+                  {recommendation.quality_score.toFixed(1)}/10
+                </Badge>
+              ) : null}
             </div>
           </div>
         </div>
@@ -172,20 +233,37 @@ export default function RecommendationCard({
         </div>
 
         {/* USP: Auto-Draft Button */}
-        {(recommendation.category === 'missing_content' || recommendation.title.includes('Add')) && (
-          <button
-            onClick={handleDraft}
-            disabled={isDrafting}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/40 disabled:opacity-70 disabled:cursor-not-allowed group"
+        <div className="flex items-center gap-2">
+          <Button
+            variant={recommendation.is_completed ? "outline" : "default"}
+            onClick={toggleComplete}
+            disabled={isToggling}
           >
-            {isDrafting ? (
+            {isToggling ? (
               <Loader2 className="w-4 h-4 animate-spin" />
+            ) : recommendation.is_completed ? (
+              "Mark as Not Done"
             ) : (
-              <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+              "Mark as Done"
             )}
-            {isDrafting ? 'Drafting...' : 'Auto-Draft Content'}
-          </button>
-        )}
+          </Button>
+
+          {(recommendation.category === "missing_content" ||
+            recommendation.title.includes("Add")) && (
+            <button
+              onClick={handleDraft}
+              disabled={isDrafting}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/40 disabled:opacity-70 disabled:cursor-not-allowed group"
+            >
+              {isDrafting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+              )}
+              {isDrafting ? "Drafting..." : "Auto-Draft Content"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Draft Result Modal */}
@@ -204,8 +282,37 @@ export default function RecommendationCard({
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto font-mono text-sm bg-muted/20 inner-shadow">
-              <pre className="whitespace-pre-wrap text-foreground/90 font-sans leading-relaxed">{draftContent}</pre>
+            <div className="p-6 overflow-y-auto text-sm bg-muted/20 inner-shadow">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={previewMode === "rendered" ? "default" : "outline"}
+                    onClick={() => setPreviewMode("rendered")}
+                  >
+                    Rendered
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={previewMode === "raw" ? "default" : "outline"}
+                    onClick={() => setPreviewMode("raw")}
+                  >
+                    Raw
+                  </Button>
+                </div>
+                <Button size="sm" variant="outline" onClick={openInNewTab}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open in new tab
+                </Button>
+              </div>
+
+              {previewMode === "raw" ? (
+                <pre className="whitespace-pre-wrap text-foreground/90 font-mono leading-relaxed">
+                  {draftContent}
+                </pre>
+              ) : (
+                <MarkdownPreview markdown={draftContent} />
+              )}
             </div>
 
             <div className="p-4 border-t border-white/10 flex justify-end gap-3 bg-muted/5">
@@ -228,4 +335,13 @@ export default function RecommendationCard({
       )}
     </div>
   );
+}
+
+function escapeHtml(s: string) {
+  return (s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

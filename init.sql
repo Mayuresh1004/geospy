@@ -68,3 +68,69 @@ CREATE POLICY "Users can update their own profile"
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
+
+-- =========================================================
+-- GEOspy agent workflow tables
+-- =========================================================
+
+-- Add agent run metadata table (only if projects table exists)
+DO $$
+BEGIN
+  IF to_regclass('public.projects') IS NOT NULL THEN
+    EXECUTE $sql$
+      CREATE TABLE IF NOT EXISTS public.agent_runs (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+        user_id UUID NOT NULL,
+        status TEXT NOT NULL DEFAULT 'running', -- running | complete | failed
+        steps_completed TEXT[] DEFAULT '{}'::TEXT[],
+        errors TEXT[] DEFAULT '{}'::TEXT[],
+        summary JSONB DEFAULT '{}'::JSONB,
+        started_at TIMESTAMPTZ DEFAULT NOW(),
+        completed_at TIMESTAMPTZ,
+        duration_ms INTEGER
+      );
+
+      ALTER TABLE public.agent_runs ENABLE ROW LEVEL SECURITY;
+
+      DO $pol$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1
+          FROM pg_policies
+          WHERE schemaname = 'public'
+            AND tablename = 'agent_runs'
+            AND policyname = 'Users can view own runs'
+        ) THEN
+          CREATE POLICY "Users can view own runs"
+            ON public.agent_runs
+            FOR SELECT
+            USING (auth.uid() = user_id);
+        END IF;
+      END
+      $pol$;
+    $sql$;
+  END IF;
+END
+$$;
+
+-- Projects table additions for agent workflow
+ALTER TABLE IF EXISTS public.projects
+  ADD COLUMN IF NOT EXISTS last_agent_run_at TIMESTAMPTZ;
+
+ALTER TABLE IF EXISTS public.projects
+  ADD COLUMN IF NOT EXISTS agent_run_count INTEGER DEFAULT 0;
+
+-- Analysis results additions for scoring
+ALTER TABLE IF EXISTS public.analysis_results
+  ADD COLUMN IF NOT EXISTS geo_score_breakdown JSONB DEFAULT '{}'::JSONB;
+
+ALTER TABLE IF EXISTS public.analysis_results
+  ADD COLUMN IF NOT EXISTS competitor_map JSONB DEFAULT '{}'::JSONB;
+
+-- Recommendations additions for completion tracking
+ALTER TABLE IF EXISTS public.recommendations
+  ADD COLUMN IF NOT EXISTS is_completed BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE IF EXISTS public.recommendations
+  ADD COLUMN IF NOT EXISTS quality_score NUMERIC(3,1);

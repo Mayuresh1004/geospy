@@ -9,6 +9,7 @@ interface Project {
   target_topic: string;
   created_at: string;
   updated_at: string;
+  geo_score_total?: number | null;
 }
 
 interface ProjectsListProps {

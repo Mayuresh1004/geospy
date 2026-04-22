@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX = 10
+const apiRateLimitStore = new Map<string, number[]>()
+let lastRateLimitSweepAt = 0
+
 export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -40,6 +45,34 @@ export async function middleware(request: NextRequest) {
         setTimeout(() => reject(new Error("Supabase request timeout")), 5000),
       ),
     ])
+
+    // API rate limit for project routes (10 req/min per user)
+    if (request.nextUrl.pathname.startsWith("/api/projects")) {
+      const key = user?.id ?? request.headers.get("x-forwarded-for") ?? "anon"
+      const now = Date.now()
+      const windowStart = now - RATE_LIMIT_WINDOW_MS
+      const existing = apiRateLimitStore.get(key) ?? []
+      const recent = existing.filter((ts) => ts > windowStart)
+
+      if (recent.length >= RATE_LIMIT_MAX) {
+        return NextResponse.json(
+          { error: "Rate limit exceeded. Max 10 requests per minute." },
+          { status: 429 }
+        )
+      }
+      recent.push(now)
+      apiRateLimitStore.set(key, recent)
+
+      // Lightweight periodic cleanup to avoid unbounded memory growth.
+      if (now - lastRateLimitSweepAt > RATE_LIMIT_WINDOW_MS) {
+        for (const [k, timestamps] of apiRateLimitStore.entries()) {
+          const filtered = timestamps.filter((ts) => ts > windowStart)
+          if (filtered.length === 0) apiRateLimitStore.delete(k)
+          else apiRateLimitStore.set(k, filtered)
+        }
+        lastRateLimitSweepAt = now
+      }
+    }
 
     // Protected routes
     if (request.nextUrl.pathname.startsWith("/dashboard")) {

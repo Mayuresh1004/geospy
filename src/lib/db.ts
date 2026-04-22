@@ -12,6 +12,15 @@ export const db = createClient(supabaseUrl, supabaseServiceKey, {
   }
 });
 
+export async function dbQuery<T>(
+  query: () => Promise<{ data: T | null; error: { message?: string } | null }>
+): Promise<T> {
+  const { data, error } = await query();
+  if (error) throw new Error(error.message ?? "Database query failed");
+  if (!data) throw new Error("No data returned");
+  return data;
+}
+
 // Types remain the same...
 export type Project = {
   id: string;
