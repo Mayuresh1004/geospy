@@ -9,14 +9,18 @@ export async function signUp(formData: FormData) {
   const fullName = formData.get("fullName") as string;
 
   const supabase = await getSupabaseServerClient();
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+  const emailRedirectTo = appUrl
+    ? `${appUrl}/auth-callback`
+    : "http://localhost:3000/auth-callback";
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo:
-        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+      emailRedirectTo,
       data: {
         full_name: fullName,
       },

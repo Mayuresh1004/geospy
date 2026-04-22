@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { requireAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -22,9 +23,8 @@ export default async function DashboardLayout({
         <AppSidebar />
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="w-full px-6 py-8">
-            {children}
+        <main className="flex-1 min-w-0 overflow-y-auto w-full">
+        <div className="w-full max-w-none px-6 py-8">            {children}
           </div>
         </main>
       </div>
