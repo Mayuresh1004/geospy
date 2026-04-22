@@ -84,7 +84,7 @@ export function AppSidebar() {
                   <LayoutDashboard className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">SaaS MVP</span>
+                  <span className="font-semibold">Geospy</span>
                   <span className="text-xs text-muted-foreground">
                     Enterprise
                   </span>

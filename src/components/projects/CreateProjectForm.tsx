@@ -102,7 +102,7 @@ export default function CreateProjectForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card rounded-lg border border-border p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="w-full max-w-none bg-card rounded-lg border border-border p-6 shadow-sm">
       {error && (
         <div className="mb-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
           <p className="text-sm text-destructive">{error}</p>

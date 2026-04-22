@@ -107,7 +107,7 @@ export default function TestPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <h1 className="text-2xl font-bold mb-4">Test Complete Flow</h1>
       
       <button

@@ -2,6 +2,17 @@
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser"
 
+type ProfileRow = {
+  id: string
+  username: string | null
+  full_name: string | null
+  email: string | null
+  avatar_url: string | null
+  is_admin: boolean
+  created_at: string
+  updated_at: string
+}
+
 export async function getProfileByUserId(userId: string) {
   const supabase = getSupabaseBrowserClient()
 
@@ -12,16 +23,17 @@ export async function getProfileByUserId(userId: string) {
     .single()
 
   if (error || !data) return null
+  const row = data as unknown as ProfileRow
 
   // Keep shape compatible with existing UI code that expects camelCase fields.
   return {
-    id: data.id,
-    username: data.username,
-    fullName: data.full_name,
-    email: data.email ?? null,
-    avatarUrl: data.avatar_url,
-    isAdmin: data.is_admin,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    id: row.id,
+    username: row.username,
+    fullName: row.full_name,
+    email: row.email ?? null,
+    avatarUrl: row.avatar_url,
+    isAdmin: row.is_admin,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
   }
 }

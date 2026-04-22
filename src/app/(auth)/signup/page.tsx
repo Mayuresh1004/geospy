@@ -12,7 +12,7 @@ export default function SignupPage() {
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <Link href="/" className="text-2xl font-bold">
-              SaaS MVP
+              Geospy
             </Link>
           </div>
           <CardTitle className="text-2xl text-center">Create an account</CardTitle>

@@ -688,7 +688,8 @@ Limit to 2 action items.
   }
 
   if (analysis.content_depth_score < 60) {
-    const avgH2s = analysis.structural_patterns?.competitor_avg_h2s || 5;
+    const avgH2sRaw = analysis.structural_patterns?.competitor_avg_h2s;
+    const avgH2s = typeof avgH2sRaw === "number" ? avgH2sRaw : 5;
     recommendations.push({
       analysis_id: analysisId,
       project_id: projectId,

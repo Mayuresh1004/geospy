@@ -9,58 +9,69 @@ import { analyzeNode } from "@/lib/agents/nodes/analyzeNode";
 import { reportNode } from "@/lib/agents/nodes/reportNode";
 
 export const GEOAgentStateAnnotation = Annotation.Root({
-  projectId: Annotation<string>({ default: () => "" }),
-  userId: Annotation<string>({ default: () => "" }),
-  targetTopic: Annotation<string>({ default: () => "" }),
+  projectId: Annotation<string>({
+    value: (_left, right) => right,
+    default: () => "",
+  }),
+  userId: Annotation<string>({
+    value: (_left, right) => right,
+    default: () => "",
+  }),
+  targetTopic: Annotation<string>({
+    value: (_left, right) => right,
+    default: () => "",
+  }),
   urls: Annotation<GEOAgentState["urls"]>({
     default: () => [],
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
 
   scrapeResults: Annotation<GEOAgentState["scrapeResults"]>({
     default: () => [],
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
   generatedAnswers: Annotation<GEOAgentState["generatedAnswers"]>({
     default: () => [],
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
   analysisResult: Annotation<GEOAgentState["analysisResult"]>({
     default: () => null,
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
   recommendations: Annotation<GEOAgentState["recommendations"]>({
     default: () => [],
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
   competitorMap: Annotation<GEOAgentState["competitorMap"]>({
     default: () => ({}),
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
 
   currentStep: Annotation<GEOAgentState["currentStep"]>({
     default: () => "idle",
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
   errors: Annotation<string[]>({
     default: () => [],
-    reducer: (left, right) => left.concat(right ?? []),
+    value: (left, right) => left.concat(right ?? []),
   }),
   retryCount: Annotation<number>({
     default: () => 0,
-    reducer: (_left, right) => right,
+    value: (_left, right) => right,
   }),
   logs: Annotation<string[]>({
     default: () => [],
-    reducer: (left, right) => left.concat(right ?? []),
+    value: (left, right) => left.concat(right ?? []),
   }),
 });
 
 export function createGeoAgentGraph() {
-  const builder = new StateGraph(GEOAgentStateAnnotation);
+  // LangGraph 1.x typings can be overly restrictive across patch releases.
+  // Keep runtime behavior unchanged while avoiding false-positive TS errors.
+  const builder = new StateGraph(GEOAgentStateAnnotation) as any;
 
   builder.addNode("fetchProjectData", fetchProjectDataNode);
-  builder.addNode("scrape", async (s: GEOAgentState, cfg) => {
+  builder.addNode("scrape", async (s: GEOAgentState, cfg: unknown) => {
     const nextRetry = shouldRetryAllScrapesFailed(s) ? (s.retryCount ?? 0) + 1 : s.retryCount ?? 0;
     const update = await scrapeNode(
       s,
