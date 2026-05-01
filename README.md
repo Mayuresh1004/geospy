@@ -1,149 +1,83 @@
-# SaaS MVP Template 🚀
+# GEOspy
 
-A complete, production-ready SaaS starter template built with **Next.js 16**, **Supabase**, and modern web technologies.  
-Perfect for hackathons, MVPs, and rapid product experiments.
+[![Ask DeepWiki](https://devin.ai/assets/askdeepwiki.png)](https://deepwiki.com/Mayuresh1004/geospy)
 
-👉 **New here? Start with the [Setup Guide](./SETUP_GUIDE.md)**  
-💬 **Questions? Join the conversation in [Discussions](../../discussions)**
+GEOspy is a **Generative Engine Optimization (GEO)** platform designed to ensure your content is understood, cited, and recommended by AI-driven search engines like Perplexity and Gemini. In an era where AI synthesizes answers, traditional SEO is not enough. If your content isn't part of the AI's answer, you become invisible.
 
----
+This platform moves beyond keyword tracking to reverse-engineer the "black box" of generative AI. It analyzes your content's semantic meaning, identifies critical gaps, and provides actionable, AI-powered tools to make your content the primary source for AI answers.
 
-## ✨ Features
+## ✨ Key Features
 
-- **Authentication & Authorization**  
-  Email/password, magic links, and OAuth via Supabase Auth
-- **Database**  
-  PostgreSQL with Supabase + Row Level Security (RLS)
-- **Email Notifications**  
-  Transactional emails with Resend + React Email
-- **Dashboard**  
-  Protected admin dashboard with sidebar navigation
-- **Landing Page**  
-  Responsive marketing site with pricing & FAQ sections
-- **Dark Mode**  
-  Theme switching via `next-themes`
-- **Type Safety**  
-  End-to-end TypeScript (including database types)
-- **UI Components**  
-  shadcn/ui + Radix UI
-- **Charts & Visualizations**  
-  Recharts integration
-
----
+*   **Automated Agent Workflow:** A multi-step agent streams progress as it scrapes, analyzes, generates answers, and creates recommendations.
+*   **Semantic Gap Analysis:** Instead of just keywords, GEOspy uses Gemini embeddings to find *meaning* gaps between your content and what AI expects to see.
+*   **AI-Powered Recommendations:** Get specific, prioritized tasks to improve your GEO score, from adding missing sections to restructuring content.
+*   **Content Auto-Drafting:** Instantly generate high-quality, formatted Markdown sections with a single click to fill identified content gaps.
+*   **GEO Impact Simulator:** See a "before and after" of how AI will respond to your content once you implement the recommended changes, proving your ROI before you even publish.
+*   **Comprehensive Dashboard:** Track your GEO score, historical performance, competitor coverage, and project progress in one place.
 
 ## 🧰 Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth
-- **Email**: Resend + React Email
-- **Styling**: Tailwind CSS v4
-- **UI**: shadcn/ui + Radix UI
-- **Forms**: React Hook Form + Zod
-- **Charts**: Recharts
-- **Language**: TypeScript
-- **Runtime**: Bun
+*   **Framework:** Next.js 16 (App Router)
+*   **AI & Agents:** Google Gemini, LangChain, LangGraph
+*   **Database & Auth:** Supabase (PostgreSQL)
+*   **Web Scraping:** Firecrawl
+*   **UI:** shadcn/ui, Radix UI, Recharts
+*   **Styling:** Tailwind CSS
+*   **Language:** TypeScript
+*   **Runtime:** Bun
 
----
+## 🚀 Getting Started
 
-## 🚀 Getting Started (Quick Start)
+For a complete walkthrough, see the **[Setup Guide](./SETUP_GUIDE.md)**.
 
-> For full instructions, see the **[Setup Guide](./SETUP_GUIDE.md)**
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/mayuresh1004/geospy.git
+cd geospy
+```
+
+### 2. Configure Environment Variables
+
+Create a `.env` file in the root of the project and add the following keys. You will need API keys from Supabase, Google (for Gemini), and Firecrawl.
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Generative AI & Scraping
+GEMINI_API_KEY=your_gemini_api_key
+FIRECRAWL_API_KEY=your_firecrawl_api_key
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 3. Set up the Database
+
+1.  Create a new project on [Supabase](https://supabase.com).
+2.  Navigate to the **SQL Editor**.
+3.  Copy the contents of `init.sql` and run the script to create the necessary tables and policies.
+
+### 4. Install Dependencies & Run
 
 ```bash
 bun install
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your app.
+Your application will be available at [http://localhost:3000](http://localhost:3000).
 
-## Project Structure
+## 🤖 Core Workflow: The GEO Agent
 
-```
-├── src/
-│   ├── app/
-│   │   ├── (auth)/              # Authentication pages (login, signup)
-│   │   ├── (dashboard)/         # Protected dashboard pages
-│   │   ├── (marketing)/         # Public marketing pages
-│   │   ├── api/                 # API routes (checkout, webhooks)
-│   │   ├── favicon.ico
-│   │   ├── globals.css          # Global styles
-│   │   ├── layout.tsx           # Root layout
-│   │   └── not-found.tsx
-│   ├── components/
-│   │   ├── dashboard/           # Dashboard-specific components
-│   │   ├── landing/             # Landing page components
-│   │   └── ui/                  # Reusable UI components (shadcn)
-│   ├── hooks/
-│   ├── lib/
-│   │   └── supabase/            # Supabase client utilities
-│   └── types/                   # TypeScript type definitions
-├── public/                      # Static assets
-├── scripts/                     # Database migration scripts
-├── .env                         # Environment variables
-├── bun.lock                     # Bun lock file
-├── components.json              # shadcn/ui configuration
-├── eslint.config.mjs            # ESLint configuration
-├── middleware.ts                # Next.js middleware
-├── next.config.ts               # Next.js configuration
-├── package.json                 # Package dependencies
-├── postcss.config.mjs           # PostCSS configuration
-├── tsconfig.json                # TypeScript configuration
-└── README.md                    # This file
-```
+The central nervous system of GEOspy is an autonomous agent built with LangGraph. When a "Full Analysis" is run, the agent executes a series of steps to provide a comprehensive GEO report.
 
-## Database Schema
-
-The template includes the following tables:
-
-- **profiles**: User profile information
-
-All tables include Row Level Security (RLS) policies for data protection.
-
-## Customization
-
-### Branding
-
-- Update the app name in `components/landing/header.tsx` and `components/dashboard/sidebar.tsx`
-- Modify colors in `app/globals.css` (design tokens)
-- Update metadata in `app/layout.tsx`
-- Replace placeholder logo and favicon
-
-### Features
-
-- Add new dashboard pages in `app/(dashboard)/dashboard/`
-- Create new API routes in `app/api/`
-- Add email templates in `emails/`
-- Extend database schema with new tables in `scripts/`
-
-## Security Best Practices
-
-- All database tables use Row Level Security (RLS)
-- API routes verify authentication before processing
-- Webhook endpoints verify signatures
-- Environment variables are never exposed to the client (except NEXT_PUBLIC_* vars)
-- Passwords are hashed by Supabase Auth
-- HTTPS is enforced in production
-- Payment credentials are optional and gracefully handled
-
-## Support
-
-For issues or questions:
-- Check the documentation
-- Review the code comments
-- Open an issue on GitHub
-- Contact support
-
-## License
-
-MIT License - feel free to use this template for your projects.
-
-## Credits
-
-Built with:
-- [Next.js](https://nextjs.org)
-- [Supabase](https://supabase.com)
-- [shadcn/ui](https://ui.shadcn.com)
-- [Stripe](https://stripe.com)
-- [Resend](https://resend.com)
-- [Vercel](https://vercel.com)
+1.  **`fetchProjectData`**: Loads the project configuration, including the target topic and associated URLs.
+2.  **`scrape`**: Uses Firecrawl to scrape the content and structure of your pages and your competitors' pages. The process includes caching and retries for robustness.
+3.  **`competitorAnalysis`**: Builds a "content map" of competitor sites, identifying their key content pillars, link density, and use of structured data.
+4.  **`validateScrape`**: Ensures that scraping was successful before proceeding. If all scrapes fail, the run is terminated to avoid faulty analysis.
+5.  **`generate`**: Queries the Gemini model with an expanded set of questions related to your target topic to simulate how a generative engine would create an answer.
+6.  **`analyze`**: This is the core analysis step. It compares the AI-generated answers against your scraped content to calculate semantic coverage, identify content gaps, and compute a comprehensive GEO score.
+7.  **`report`**: Based on the analysis, this node generates actionable recommendations and persists the final results and logs to the database.
